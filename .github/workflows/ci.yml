@@ -10,9 +10,9 @@ jobs:
     timeout-minutes: 30
     env:
       AUDITOR_MODE: local
-      AUDITOR_HISTORY_DB: ${{ runner.temp }}/audit_history.db
+      AUDITOR_HISTORY_DB: "${{ runner.temp }}/audit_history.db"
       AUDITOR_DISK_PRESSURE_RELAX: "1"
-      AUDITOR_JOBS_CACHE: ${{ runner.temp }}/jobs_cache.json
+      AUDITOR_JOBS_CACHE: "${{ runner.temp }}/jobs_cache.json"
     steps:
       - uses: actions/checkout@v4
 
