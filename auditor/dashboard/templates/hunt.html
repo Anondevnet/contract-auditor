@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h2>High-value Target Hunt</h2>
+    <p class="subtitle">
+        Candidates from DefiLlama; Phase 21 follows proxies and ranks vaults/strategies by live holdings. Ranked by a
+        <strong>priority hint</strong> (heuristic — not evidence a bug exists).
+        Scanned by <span class="mono">audit.py hunt</span>.
+        Read-only view, refreshes every 5 s. <span id="hunt-updated" class="muted"></span>
+        · <a href="/monitor">Live Monitor</a>
+    </p>
+</div>
+
+<div class="card discovery-control">
+    <div class="card-header"><div>
+        <h3>Autonomous Ethereum discovery</h3>
+        <div class="muted">No Solidity upload needed. Keep new deployments and upgrades under watch, or run one bounded discovery and audit cycle.</div>
+    </div><div class="header-right">
+        <button class="btn btn-primary" id="live-discovery-start" type="button">Start continuous</button>
+        <button class="btn btn-secondary" id="live-discovery-stop" type="button" disabled>Stop</button>
+        <button class="btn btn-secondary js-discovery-run" id="hunt-run-btn" data-status-id="hunt-run-status" type="button">Run one cycle</button>
+    </div></div>
+    <div class="card-body">
+        <div class="live-discovery-status" id="live-discovery-status" role="status">Checking worker status…</div>
+        <div class="live-discovery-metrics">
+            <div><span>Last block indexed</span><strong id="live-block">—</strong></div>
+            <div><span>Block lag</span><strong id="live-lag">—</strong></div>
+            <div><span>Latest read snapshot</span><strong id="live-snapshot">—</strong></div>
+            <div><span>Queue pending</span><strong id="live-queue">—</strong></div>
+            <div><span>Candidates / ready / scanned</span><strong id="live-candidates">—</strong></div>
+            <div><span>Exact source matches</span><strong id="live-exact">—</strong></div>
+            <div><span>Last hunt · found / measured / scanned</span><strong id="live-last-hunt">—</strong></div>
+            <div><span>Heartbeat</span><strong id="live-heartbeat">—</strong></div>
+        </div>
+        <div class="pipeline-rail" id="discovery-pipeline" aria-label="Six stage audit pipeline">
+            <div class="pipeline-node" data-stage="discover"><span class="pipeline-index">01</span><strong>Discover</strong><small>Blocks · registries · pools</small></div>
+            <div class="pipeline-node" data-stage="retrieve_source"><span class="pipeline-index">02</span><strong>Retrieve source</strong><small>Etherscan · Sourcify · GitHub refs</small></div>
+            <div class="pipeline-node" data-stage="verify_deployment"><span class="pipeline-index">03</span><strong>Verify deployment</strong><small>Code · proxies · compiler metadata</small></div>
+            <div class="pipeline-node" data-stage="prioritize"><span class="pipeline-index">04</span><strong>Prioritize</strong><small>Vaults · lending · AMMs · bridges</small></div>
+            <div class="pipeline-node" data-stage="security_analysis"><span class="pipeline-index">05</span><strong>Security analysis</strong><small>Slither · custom checks · vault fuzz</small></div>
+            <div class="pipeline-node" data-stage="fork_validation"><span class="pipeline-index">06</span><strong>Fork validation</strong><small>Invariants · pinned state · review leads</small></div>
+        </div>
+        <div class="discovery-run-status" id="hunt-run-status" role="status">Ready · latest discovery data appears in the candidate table below.</div>
+        <details class="live-discovery-events">
+            <summary>Recent worker events</summary>
+            <ol id="live-discovery-events"><li class="muted">No worker events recorded.</li></ol>
+        </details>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>Source and discovery feeds</h3><span class="muted" id="provider-updated">Checking provider setup…</span></div>
+    <p class="muted">Explorer verification means source is published. “Exact bytecode match” is reported separately and is only set when Sourcify provides an exact match; local compile output has not been compared.</p>
+    <div class="provider-grid" id="provider-grid"><div class="provider-card muted">Loading provider status…</div></div>
+</div>
+
+<div class="card"><div class="card-body" id="hunt-strategies"><span class="muted">Strategy stages: loading…</span></div></div>
+<div class="stats-grid mon-stats" id="hunt-counters">
+    <div class="stat-card"><div><span class="stat-value" id="h-total">-</span><span class="stat-label">Candidates</span></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="h-ready">-</span><span class="stat-label">Ready / new</span></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="h-scanned">-</span><span class="stat-label">Scanned</span></div></div>
+    <div class="stat-card mon-warn"><div><span class="stat-value" id="h-source-unverified">-</span><span class="stat-label">Source unverified · retry due</span></div></div>
+    <div class="stat-card mon-warn"><div><span class="stat-value" id="h-review">-</span><span class="stat-label">Fork leads needing review</span></div></div>
+    <div class="stat-card mon-money"><div><span class="stat-value" id="h-var">-</span><span class="stat-label">Hunted value held (scanned today, est.)</span>
+        <div class="mon-sev muted" id="h-var-note">rough estimate</div></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="h-tvl">-</span><span class="stat-label">Hunted TVL / holdings (scanned today, est.)</span></div></div>
+    <div class="stat-card mon-money"><div><span class="stat-value" id="h-confirmed">-</span><span class="stat-label">Confirmed outsider loss estimate</span></div></div>
+    <div class="stat-card mon-warn"><div><span class="stat-value" id="h-unresolved">-</span><span class="stat-label">Unresolved potential impact estimate</span></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="h-disproved">-</span><span class="stat-label">Disproved / false-positive estimate excluded</span></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="h-impact-classes">—</span><span class="stat-label">Open impact mechanisms · count only</span></div></div>
+
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>Candidates</h3>
+        <div class="header-right">
+            <label class="muted" for="hunt-sort">Sort</label>
+            <select id="hunt-sort" class="select-sm">
+                <option value="priority">Priority hint</option>
+                <option value="tvl">TVL</option>
+                <option value="loss">Potential impact estimate</option>
+                <option value="recent">Recently updated</option>
+            </select>
+            <span class="muted" id="hunt-priority-note"></span>
+        </div>
+    </div>
+    <div class="table-container">
+        <table class="data-table">
+            <thead><tr>
+                <th>Protocol</th><th>Address</th><th>Category</th>
+                <th title="Live holdings at this address (proxy/vault), rough estimate">Value held</th>
+                <th title="DefiLlama Ethereum TVL or on-chain holdings (rough estimate)">TVL (est.)</th>
+                <th title="Proxy kind and implementation (source scanned there; funds sit on the proxy)">Proxy → impl</th>
+                <th title="Priority hint — where to look first; NOT a claim that a bug exists">Priority</th>
+                <th>Status</th><th>Fork sim</th><th>Fuzz</th><th>Findings</th>
+                <th title="Heuristic model estimate; not proven loss or takeable funds">Potential impact estimate</th>
+                <th></th>
+            </tr></thead>
+            <tbody id="hunt-rows"><tr class="empty-row"><td colspan="13">No hunt candidates yet. Run <span class="mono">audit.py hunt --once</span>.</td></tr></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card" id="hunt-detail" style="display:none;">
+    <div class="card-header"><h3 id="hunt-detail-title">Candidate</h3>
+        <div class="header-right"><a class="btn btn-secondary btn-sm" id="hunt-scan-link" href="#">Open scan</a></div>
+    </div>
+    <div class="card-body">
+        <div class="meta-grid" id="hunt-detail-meta"></div>
+        <div id="hunt-detail-score"></div>
+        <div id="hunt-detail-signals"></div>
+    </div>
+</div>
+
+<div class="card" id="sim-panel">
+    <div class="card-header"><h3>Fork simulation (Phase 22)</h3>
+        <span class="muted">Local anvil fork — defensive invariants / oracle / trust; queued automatically after static analysis.</span>
+    </div>
+    <div class="card-body">
+        <p class="muted" id="sim-note"></p>
+        <div id="sim-runs"></div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/hunt.js"></script>
+{% endblock %}

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contract-auditor/schemas/finding.schema.json",
+  "title": "Finding",
+  "description": "A single potential security issue with its complete evidence and reasoning trail. Severity and confidence are independent axes.",
+  "type": "object",
+  "required": [
+    "finding_id",
+    "title",
+    "severity",
+    "confidence",
+    "verification_status",
+    "category",
+    "description",
+    "evidence"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "finding_id": { "type": "string", "pattern": "^F-[0-9a-f]{12}$" },
+    "title": { "type": "string", "minLength": 1 },
+    "severity": {
+      "type": "string",
+      "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFORMATIONAL"]
+    },
+    "confidence": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW"] },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "UNVERIFIED",
+        "POSSIBLE",
+        "LIKELY",
+        "CONFIRMED",
+        "DISMISSED",
+        "FALSE_POSITIVE",
+        "NOT_APPLICABLE",
+        "INSUFFICIENT_EVIDENCE"
+      ]
+    },
+    "category": { "type": "string" },
+    "description": { "type": "string" },
+    "affected_contract": { "type": ["string", "null"] },
+    "affected_function": { "type": ["string", "null"] },
+    "affected_lines": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 },
+      "description": "1-based line numbers. Never 0-indexed."
+    },
+    "source": { "type": ["string", "null"] },
+    "tool": { "type": ["string", "null"] },
+    "reasoning": { "type": "string" },
+    "exploitability": { "type": "string" },
+    "impact": { "type": "string" },
+    "prerequisites": { "type": "array", "items": { "type": "string" } },
+    "likelihood": { "type": "string" },
+    "false_positive_risk": { "type": "string" },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "contradicting_evidence": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Evidence that argues against this finding. Required for a credible FP analysis."
+    },
+    "benign_explanation": { "type": ["string", "null"] },
+    "remediation": { "type": "string" },
+    "references": { "type": "array", "items": { "type": "string" } },
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "evidence.schema.json" }
+    },
+    "fact_evidence_count": { "type": "integer", "minimum": 0 },
+    "ai_evidence_count": { "type": "integer", "minimum": 0 },
+    "created_at": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "$comment": "CONFIRMED and LIKELY require at least one FACT evidence item. This is the guardrail against AI-only conclusions.",
+      "if": {
+        "properties": {
+          "verification_status": { "enum": ["CONFIRMED", "LIKELY"] }
+        },
+        "required": ["verification_status"]
+      },
+      "then": {
+        "properties": { "fact_evidence_count": { "minimum": 1 } },
+        "required": ["fact_evidence_count"]
+      }
+    }
+  ]
+}

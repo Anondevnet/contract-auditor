@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Job Progress</h2>
+    <p class="subtitle" id="job-subtitle">Loading...</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3>Job Details</h3>
+        <div class="header-right">
+            <a href="/" class="btn btn-link">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="job-detail">
+        <div class="job-meta">
+            <div class="meta-item">
+                <span class="meta-label">Job ID</span>
+                <span class="meta-value monospace" id="job-id"></span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Type</span>
+                <span class="meta-value" id="job-type"></span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Status</span>
+                <span class="meta-value" id="job-status"></span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Created</span>
+                <span class="meta-value" id="job-created"></span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Started</span>
+                <span class="meta-value" id="job-started"></span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Completed</span>
+                <span class="meta-value" id="job-completed"></span>
+            </div>
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="job-progress-bar"></div>
+            </div>
+            <div class="progress-text" id="job-progress-text">0%</div>
+            <div class="job-message" id="job-message">Queued</div>
+        </div>
+
+        <div class="job-input">
+            <div class="input-label">Input</div>
+            <pre class="input-value" id="job-input"></pre>
+        </div>
+
+        <div class="job-stages-section" id="job-stages-section" style="display:none;">
+            <div class="input-label">
+                Stages
+                <span class="muted" id="job-elapsed"></span>
+            </div>
+            <ol class="stage-list" id="job-stages"></ol>
+        </div>
+
+        <div class="job-log-section" id="job-log-section" style="display:none;">
+            <div class="input-label">Log</div>
+            <pre class="output-value" id="job-log"></pre>
+        </div>
+
+        <div class="job-output" id="job-output-section" style="display:none;">
+            <div class="output-label">Output</div>
+            <pre class="output-value" id="job-output"></pre>
+        </div>
+
+        <div class="job-error" id="job-error-section" style="display:none;">
+            <div class="error-label">Error</div>
+            <pre class="error-value" id="job-error"></pre>
+        </div>
+    </div>
+</div>
+
+<div class="card" id="results-section" style="display:none;">
+    <div class="card-header">
+        <h3>Results</h3>
+        <div class="header-right">
+            <button class="btn btn-primary" id="view-results-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                View Results
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/job.js"></script>
+{% endblock %}

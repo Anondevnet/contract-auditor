@@ -1,0 +1,1008 @@
+{
+  "benchmark": "contract-auditor-phase14",
+  "protocol": "PROTOCOL.md",
+  "schema_version": 4,
+  "version": 1,
+  "created": "2026-10-13",
+  "toolchain": {
+    "slither": "0.11.6 (PATH)",
+    "solc": "0.5.8 (PATH) \u2014 all fixtures: pragma solidity ^0.5.8",
+    "forge": "1.8.3 (not used by fixtures)"
+  },
+  "provenance_default": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 14 benchmarking. Not copied from any third-party source.",
+  "fixtures": [
+    {
+      "fixture_id": "REENT-001",
+      "file": "REENT-001-vulnerable.sol",
+      "category": "reentrancy",
+      "expected_label": "vulnerable",
+      "expected_contract": "ReentrancyVault",
+      "expected_function": "withdraw",
+      "expected_behavior": "withdraw() sends Ether to msg.sender (external call) BEFORE zeroing balances[msg.sender], violating checks-effects-interactions; a reentrant receive() sees a non-zero balance and can drain the vault.",
+      "protection_control": null,
+      "accepted_checks": [
+        "reentrancy-eth",
+        "reentrancy-no-eth",
+        "reentrancy-balance",
+        "reentrancy-events",
+        "reentrancy-benign",
+        "reentrancy-unlimited-gas"
+      ],
+      "analyzer_family": "reentrancy",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 14 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "REENT-002",
+      "file": "REENT-002-safe.sol",
+      "category": "reentrancy",
+      "expected_label": "safe",
+      "expected_contract": "ReentrancyVaultSafe",
+      "expected_function": "withdraw",
+      "expected_behavior": "No reentrancy window: the caller's balance is zeroed before the external call, so a reentrant callback observes amount == 0.",
+      "protection_control": "checks-effects-interactions: balances[msg.sender] = 0 executed before msg.sender.call.value(amount).",
+      "accepted_checks": [
+        "reentrancy-eth",
+        "reentrancy-no-eth",
+        "reentrancy-balance",
+        "reentrancy-events",
+        "reentrancy-benign",
+        "reentrancy-unlimited-gas"
+      ],
+      "analyzer_family": "reentrancy",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 14 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "ACCESS-001",
+      "file": "ACCESS-001-vulnerable.sol",
+      "category": "access_control",
+      "expected_label": "vulnerable",
+      "expected_contract": "TxOriginWallet",
+      "expected_function": "transferTo",
+      "expected_behavior": "transferTo() authorizes with tx.origin instead of msg.sender; a phishing contract the owner interacts with can forward a call that satisfies tx.origin while msg.sender is the attacker.",
+      "protection_control": null,
+      "accepted_checks": [
+        "tx-origin"
+      ],
+      "analyzer_family": "access_control",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 14 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "ACCESS-002",
+      "file": "ACCESS-002-safe.sol",
+      "category": "access_control",
+      "expected_label": "safe",
+      "expected_contract": "MsgSenderWallet",
+      "expected_function": "transferTo",
+      "expected_behavior": "No tx.origin authorization path exists; an intermediary contract cannot satisfy the identity check on behalf of the owner.",
+      "protection_control": "require(msg.sender == owner) instead of tx.origin; both address params zero-checked.",
+      "accepted_checks": [
+        "tx-origin"
+      ],
+      "analyzer_family": "access_control",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 14 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "ACCESS-003",
+      "file": "ACCESS-003-vulnerable.sol",
+      "category": "access_control",
+      "expected_label": "vulnerable",
+      "expected_contract": "KillSwitch",
+      "expected_function": "destroy",
+      "expected_behavior": "destroy() is callable by anyone and immediately selfdestructs the contract, permanently destroying state and sending the balance to the caller.",
+      "protection_control": null,
+      "accepted_checks": [
+        "suicidal"
+      ],
+      "analyzer_family": "access_control",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 14 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "ACCESS-004",
+      "file": "ACCESS-004-safe.sol",
+      "category": "access_control",
+      "expected_label": "safe",
+      "expected_contract": "KillSwitchSafe",
+      "expected_function": "destroy",
+      "expected_behavior": "No unprotected destruction path exists; an arbitrary caller cannot selfdestruct the contract.",
+      "protection_control": "require(msg.sender == owner) guard on destroy() before selfdestruct.",
+      "accepted_checks": [
+        "suicidal"
+      ],
+      "analyzer_family": "access_control",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 14 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "CALL-001",
+      "file": "CALL-001-vulnerable.sol",
+      "category": "unchecked_call",
+      "expected_label": "vulnerable",
+      "expected_contract": "RewardPusher",
+      "expected_function": "pushReward",
+      "expected_behavior": "pushReward() forwards Ether with a low-level call and discards the returned success flag; a rejected delivery is silently treated as success while the event claims the reward was pushed.",
+      "protection_control": null,
+      "accepted_checks": [
+        "unchecked-lowlevel",
+        "unchecked-send"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 14 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "CALL-002",
+      "file": "CALL-002-safe.sol",
+      "category": "unchecked_call",
+      "expected_label": "safe",
+      "expected_contract": "RewardPusherSafe",
+      "expected_function": "pushReward",
+      "expected_behavior": "No unchecked low-level call exists: the success flag is captured and a failed delivery reverts.",
+      "protection_control": "(bool success, ) = to.call.value(amount)(\"\"); require(success).",
+      "accepted_checks": [
+        "unchecked-lowlevel",
+        "unchecked-send"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 14 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "ARITH-001",
+      "file": "ARITH-001-vulnerable.sol",
+      "category": "arithmetic",
+      "expected_label": "vulnerable",
+      "expected_contract": "FeeCalculator",
+      "expected_function": "computeFee",
+      "expected_behavior": "computeFee() divides before multiplying ((amount / divisor) * bps); solc 0.5.8 has no checked arithmetic, so truncating division loses all precision below the divisor before the multiplication, systematically undercounting the fee share.",
+      "protection_control": null,
+      "accepted_checks": [
+        "divide-before-multiply"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 14 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "ARITH-002",
+      "file": "ARITH-002-safe.sol",
+      "category": "arithmetic",
+      "expected_label": "safe",
+      "expected_contract": "FeeCalculatorSafe",
+      "expected_function": "computeFee",
+      "expected_behavior": "No intermediate truncation exists: multiplication executes before the single division. Documented assumption: amount * bps does not overflow for the value ranges used (solc 0.5.8 has no overflow protection).",
+      "protection_control": "Operation reordering: (amount * bps) / divisor \u2014 multiply first, divide once.",
+      "accepted_checks": [
+        "divide-before-multiply"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 14 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "PRIV-001",
+      "file": "PRIV-001-vulnerable.sol",
+      "category": "privileged_change",
+      "expected_label": "vulnerable",
+      "expected_contract": "PrivilegedConfig",
+      "expected_function": "setAdmin",
+      "expected_behavior": "admin is declared write-protected (NatSpec write-protection=\"adminGuard()\") yet setAdmin() writes it WITHOUT invoking the protection function, letting any caller seize the admin role. Ground-truth vulnerable behavior documented for completeness; the fixture is NOT scored (see na_reason).",
+      "protection_control": null,
+      "accepted_checks": [
+        "protected-vars"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": false,
+      "na_reason": "Detector inoperable on the local toolchain (PROTOCOL.md \u00a75 case 2): slither's protected-vars requires state-variable NatSpec documentation in the solc AST; solc 0.5.8 emits documentation=null for state variables in both legacy and compact AST (verified by direct AST dump). The detector class exists but cannot trigger for any fixture without installing a newer compiler, which is out of scope.",
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 14 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "PRIV-002",
+      "file": "PRIV-002-safe.sol",
+      "category": "privileged_change",
+      "expected_label": "safe",
+      "expected_contract": "PrivilegedConfigSafe",
+      "expected_function": "setAdmin",
+      "expected_behavior": "Every write to the write-protected admin variable first invokes adminGuard(), so only the current admin can change the admin role. NOT scored (same na_reason as PRIV-001).",
+      "protection_control": "adminGuard() invoked before the admin write in setAdmin().",
+      "accepted_checks": [
+        "protected-vars"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": false,
+      "na_reason": "Detector inoperable on the local toolchain (PROTOCOL.md \u00a75 case 2): same solc 0.5.8 AST documentation limitation as PRIV-001.",
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 14 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "DELEG-001",
+      "file": "DELEG-001-vulnerable.sol",
+      "category": "delegatecall",
+      "expected_label": "vulnerable",
+      "expected_contract": "DelegateVault",
+      "expected_function": "forward",
+      "expected_behavior": "setTarget() is callable by anyone, so an attacker points target at attacker-controlled code; forward() then delegatecalls into it with the vault's storage context, giving the attacker full control of contract state.",
+      "protection_control": null,
+      "accepted_checks": [
+        "controlled-delegatecall"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 15 benchmarking. Not copied from any third-party source.",
+      "probe_evidence": "solc 0.5.8 + slither 0.11.6 (2026-10-13): controlled-delegatecall (High) on DelegateVault.forward; missing-zero-check (Low) on setTarget is recorded as other_findings."
+    },
+    {
+      "fixture_id": "DELEG-002",
+      "file": "DELEG-002-safe.sol",
+      "category": "delegatecall",
+      "expected_label": "safe",
+      "expected_contract": "DelegateVaultSafe",
+      "expected_function": "forward",
+      "expected_behavior": "The delegatecall destination is a compile-time constant, so no caller input can redirect the delegatecall; controlled-delegatecall does not fire.",
+      "protection_control": "Address constant TRUSTED; no setter for the destination exists.",
+      "accepted_checks": [
+        "controlled-delegatecall"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 15 benchmarking. Not copied from any third-party source.",
+      "probe_evidence": "solc 0.5.8 + slither 0.11.6 (2026-10-13): no non-informational detectors; controlled-delegatecall absent."
+    },
+    {
+      "fixture_id": "SEND-001",
+      "file": "SEND-001-vulnerable.sol",
+      "category": "unchecked_call",
+      "expected_label": "vulnerable",
+      "expected_contract": "RewardDistributor",
+      "expected_function": "claim",
+      "expected_behavior": "claim() forwards Ether with .send() and discards the boolean result; a failed delivery consumes the credit with no payout.",
+      "protection_control": null,
+      "accepted_checks": [
+        "unchecked-send"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 15 benchmarking. Not copied from any third-party source.",
+      "probe_evidence": "solc 0.5.8 + slither 0.11.6 (2026-10-13): unchecked-send (Medium) on RewardDistributor.claim; no other non-informational detectors."
+    },
+    {
+      "fixture_id": "SEND-002",
+      "file": "SEND-002-safe.sol",
+      "category": "unchecked_call",
+      "expected_label": "safe",
+      "expected_contract": "RewardDistributorSafe",
+      "expected_function": "claim",
+      "expected_behavior": "The .send() result is require-checked; a failed delivery reverts, so unchecked-send does not fire.",
+      "protection_control": "require(msg.sender.send(amount)) instead of a discarded result.",
+      "accepted_checks": [
+        "unchecked-send"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 15 benchmarking. Not copied from any third-party source.",
+      "probe_evidence": "solc 0.5.8 + slither 0.11.6 (2026-10-13): no non-informational detectors; unchecked-send absent."
+    },
+    {
+      "fixture_id": "ARB-001",
+      "file": "ARB-001-vulnerable.sol",
+      "category": "arbitrary_transfer",
+      "expected_label": "vulnerable",
+      "expected_contract": "Escrow",
+      "expected_function": "drain",
+      "expected_behavior": "drain() is callable by anyone and forwards the entire contract balance to a caller-supplied address, so any user can empty the escrow.",
+      "protection_control": null,
+      "accepted_checks": [
+        "arbitrary-send-eth"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 15 benchmarking. Not copied from any third-party source.",
+      "probe_evidence": "solc 0.5.8 + slither 0.11.6 (2026-10-13): arbitrary-send-eth (High) on Escrow.drain; missing-zero-check (Low) recorded as other_findings. Detector does not fire when the drain is owner-gated (verified separately), hence the unrestricted pattern."
+    },
+    {
+      "fixture_id": "ARB-002",
+      "file": "ARB-002-safe.sol",
+      "category": "arbitrary_transfer",
+      "expected_label": "safe",
+      "expected_contract": "EscrowSafe",
+      "expected_function": "drain",
+      "expected_behavior": "The only withdrawal pays the fixed owner address and requires the owner to call it; no caller-supplied destination exists, so arbitrary-send-eth does not fire.",
+      "protection_control": "Owner-only drain paying the fixed owner address.",
+      "accepted_checks": [
+        "arbitrary-send-eth"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 15 benchmarking. Not copied from any third-party source.",
+      "probe_evidence": "solc 0.5.8 + slither 0.11.6 (2026-10-13): no non-informational detectors; arbitrary-send-eth absent."
+    },
+    {
+      "fixture_id": "VAULT-001",
+      "file": "VAULT-001-vulnerable.sol",
+      "expected_label": "vulnerable",
+      "expected_contract": "NaiveVault",
+      "expected_behavior": "convertToShares mints 1:1 when supply is zero and otherwise uses assets * totalSupply() / totalAssets() with a balance-based totalAssets and no virtual offset, so the erc4626-inflation source detector fires on NaiveVault.convertToShares.",
+      "protection_control": null,
+      "category": "erc4626_inflation",
+      "expected_function": "convertToShares",
+      "accepted_checks": [
+        "erc4626-inflation"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 16 benchmarking. Not copied from any third-party source.",
+      "probe_evidence": "solc 0.5.8 + slither 0.11.6 (2026-10-15): compiles; slither emits incorrect-equality, locked-ether (unscored other findings); erc4626-inflation source detector fires on NaiveVault.convertToShares line 23 with FACT source excerpt."
+    },
+    {
+      "fixture_id": "VAULT-002",
+      "file": "VAULT-002-safe.sol",
+      "expected_label": "safe",
+      "expected_contract": "OffsetVault",
+      "expected_behavior": "Share math adds a 10**DECIMALS_OFFSET virtual-share offset and +1 virtual asset, so the erc4626-inflation source detector does not fire.",
+      "protection_control": "Virtual-share/virtual-asset offset (DECIMALS_OFFSET).",
+      "category": "erc4626_inflation",
+      "expected_function": "convertToShares",
+      "accepted_checks": [
+        "erc4626-inflation"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 16 benchmarking. Not copied from any third-party source.",
+      "probe_evidence": "solc 0.5.8 + slither 0.11.6 (2026-10-15): compiles; slither emits locked-ether only (unscored); erc4626-inflation source detector silent."
+    },
+    {
+      "fixture_id": "HONEY-001",
+      "file": "HONEY-001-vulnerable.sol",
+      "category": "scam_honeypot",
+      "expected_label": "vulnerable",
+      "expected_contract": "QuizHoneypot",
+      "expected_function": "Try",
+      "expected_behavior": "Try() pays the whole balance when keccak256(abi.encode(answer)) equals the stored responseHash, but the isAdmin-gated New() can replace responseHash and Stop() can withdraw the balance, so the privileged account controls the outcome: players' deposits are at risk (scam/honeypot, risk to users).",
+      "protection_control": null,
+      "accepted_checks": [
+        "quiz-honeypot"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 19 benchmarking. Shape modelled on a publicly documented 'quiz' honeypot pattern; no third-party code copied."
+    },
+    {
+      "fixture_id": "HONEY-002",
+      "file": "HONEY-002-safe.sol",
+      "category": "scam_honeypot",
+      "expected_label": "safe",
+      "expected_contract": "FairQuiz",
+      "expected_function": "Try",
+      "expected_behavior": "Same quiz shape, but responseHash is only set in the constructor and there is no privileged function that can change it or withdraw the balance.",
+      "protection_control": "no privileged hash change or withdraw path exists",
+      "accepted_checks": [
+        "quiz-honeypot"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 19 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "HONEY-003",
+      "file": "HONEY-003-vulnerable.sol",
+      "category": "scam_honeypot",
+      "expected_label": "vulnerable",
+      "expected_contract": "PrivateBankHoneypot",
+      "expected_function": "Collect",
+      "expected_behavior": "Collect() calls an external Log.AddMessage set from a constructor address after a value call; a malicious live Log can revert on Collect and trap deposits (PrivateBank/Log family honeypot, risk to users).",
+      "protection_control": null,
+      "accepted_checks": [
+        "external-log-gate"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 19+ benchmarking. Shape modelled on the publicly documented PrivateBank/Log honeypot family; no third-party code copied."
+    },
+    {
+      "fixture_id": "HONEY-004",
+      "file": "HONEY-004-safe.sol",
+      "category": "scam_honeypot",
+      "expected_label": "safe",
+      "expected_contract": "FairBank",
+      "expected_function": "Collect",
+      "expected_behavior": "Collect updates balance then pays the caller and emits a local event; no external Log helper on the withdraw path.",
+      "protection_control": "no external Log/AddMessage gate on withdraw",
+      "accepted_checks": [
+        "external-log-gate"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 19+ benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "SCAM-001",
+      "file": "SCAM-001-vulnerable.sol",
+      "category": "scam_honeypot",
+      "expected_label": "vulnerable",
+      "expected_contract": "BaitToken",
+      "expected_function": "_transfer",
+      "expected_behavior": "_transfer() reverts for addresses in the owner-writable isBlocked mapping and requires tradingOpen (owner-set) unless the sender is the owner, so holders can be prevented from selling (transfer-blocking token).",
+      "protection_control": null,
+      "accepted_checks": [
+        "transfer-blocking-token"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 19 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "SCAM-002",
+      "file": "SCAM-002-safe.sol",
+      "category": "scam_honeypot",
+      "expected_label": "safe",
+      "expected_contract": "PlainToken",
+      "expected_function": "_transfer",
+      "expected_behavior": "Plain fixed-supply token: _transfer() only checks the zero address and the sender's balance; no privileged transfer controls.",
+      "protection_control": "no privileged blocklist, trading flag or pair restriction",
+      "accepted_checks": [
+        "transfer-blocking-token"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 19 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "PAUTH-001",
+      "file": "PAUTH-001-unprotected-setOwner.sol",
+      "category": "privileged_auth",
+      "expected_label": "vulnerable",
+      "expected_contract": "UnprotectedOwner",
+      "expected_function": "setOwner",
+      "expected_behavior": "setOwner() writes owner with no msg.sender/role guard, so any caller can seize ownership.",
+      "protection_control": null,
+      "accepted_checks": [
+        "privileged-auth-unprotected"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 25 privileged-function authorization benchmarking."
+    },
+    {
+      "fixture_id": "PAUTH-002",
+      "file": "PAUTH-002-unprotected-upgradeTo.sol",
+      "category": "privileged_auth",
+      "expected_label": "vulnerable",
+      "expected_contract": "UnprotectedUpgrade",
+      "expected_function": "upgradeTo",
+      "expected_behavior": "upgradeTo() replaces implementation with no authorization, so any caller can upgrade the proxy logic.",
+      "protection_control": null,
+      "accepted_checks": [
+        "privileged-auth-unprotected"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 25 privileged-function authorization benchmarking."
+    },
+    {
+      "fixture_id": "PAUTH-003",
+      "file": "PAUTH-003-unprotected-withdraw.sol",
+      "category": "privileged_auth",
+      "expected_label": "vulnerable",
+      "expected_contract": "UnprotectedWithdraw",
+      "expected_function": "withdraw",
+      "expected_behavior": "withdraw() sends the full contract ETH balance to msg.sender with no authorization.",
+      "protection_control": null,
+      "accepted_checks": [
+        "privileged-auth-unprotected"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 25 privileged-function authorization benchmarking."
+    },
+    {
+      "fixture_id": "PAUTH-004",
+      "file": "PAUTH-004-tx-origin-auth.sol",
+      "category": "privileged_auth",
+      "expected_label": "vulnerable",
+      "expected_contract": "TxOriginAuth",
+      "expected_function": "setOwner",
+      "expected_behavior": "setOwner is gated only by tx.origin == owner (WEAK authorization), which is not a safe msg.sender/role check.",
+      "protection_control": null,
+      "accepted_checks": [
+        "privileged-auth-weak"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 25 privileged-function authorization benchmarking."
+    },
+    {
+      "fixture_id": "PAUTH-005",
+      "file": "PAUTH-005-unprotected-initialize.sol",
+      "category": "privileged_auth",
+      "expected_label": "vulnerable",
+      "expected_contract": "UnprotectedInitialize",
+      "expected_function": "initialize",
+      "expected_behavior": "initialize() sets owner with no initializer modifier and no caller auth, so any caller can take ownership on first call.",
+      "protection_control": null,
+      "accepted_checks": [
+        "privileged-auth-unprotected"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 25 privileged-function authorization benchmarking."
+    },
+    {
+      "fixture_id": "PAUTH-006",
+      "file": "PAUTH-006-ownable-protected.sol",
+      "category": "privileged_auth",
+      "expected_label": "safe",
+      "expected_contract": "OwnableProtected",
+      "expected_function": "setOwner",
+      "expected_behavior": "setOwner is gated by onlyOwner (msg.sender == owner). No unprotected/weak privileged-auth finding at this location.",
+      "protection_control": "modifier onlyOwner checks msg.sender == owner before the write.",
+      "accepted_checks": [
+        "privileged-auth-unprotected",
+        "privileged-auth-weak"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 25 privileged-function authorization benchmarking."
+    },
+    {
+      "fixture_id": "PAUTH-007",
+      "file": "PAUTH-007-accesscontrol-protected.sol",
+      "category": "privileged_auth",
+      "expected_label": "safe",
+      "expected_contract": "AccessControlProtected",
+      "expected_function": "mint",
+      "expected_behavior": "mint is gated by onlyRole(MINTER_ROLE) checking msg.sender. No unprotected/weak privileged-auth finding at this location.",
+      "protection_control": "modifier onlyRole requires _roles[role][msg.sender].",
+      "accepted_checks": [
+        "privileged-auth-unprotected",
+        "privileged-auth-weak"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 25 privileged-function authorization benchmarking."
+    },
+    {
+      "fixture_id": "PAUTH-008",
+      "file": "PAUTH-008-safe-controlled.sol",
+      "category": "privileged_auth",
+      "expected_label": "safe",
+      "expected_contract": "SafeControlledVault",
+      "expected_function": "withdraw",
+      "expected_behavior": "withdraw is onlyOwner-gated (TN for unprotected/weak). When a trust map identifies owner as a Safe, the analyzer may emit an INFORMATIONAL privileged-auth-protected centralization note \u2014 not a vulnerability.",
+      "protection_control": "modifier onlyOwner; controller may be a Safe m-of-n on-chain.",
+      "accepted_checks": [
+        "privileged-auth-unprotected",
+        "privileged-auth-weak"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 25 privileged-function authorization benchmarking."
+    },
+    {
+      "fixture_id": "HONEY-005",
+      "file": "HONEY-005-vulnerable.sol",
+      "category": "scam_honeypot",
+      "expected_label": "vulnerable",
+      "expected_contract": "InflatableToken",
+      "expected_function": "mint",
+      "expected_behavior": "onlyOwner mint(to, amount) with no supply cap: privileged account can inflate supply (risk to holders).",
+      "protection_control": null,
+      "accepted_checks": [
+        "unlimited-owner-mint"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 26 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "HONEY-006",
+      "file": "HONEY-006-safe.sol",
+      "category": "scam_honeypot",
+      "expected_label": "safe",
+      "expected_contract": "AsyncClaimVault",
+      "expected_function": "mint",
+      "expected_behavior": "ERC-7540-style mint(shares, receiver) claims only the caller's own settled request; controller overload is operator-gated. Not an owner mint.",
+      "protection_control": "mint consumes caller/controller settled request (claim, not supply inflation)",
+      "accepted_checks": [
+        "unlimited-owner-mint"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "na_reason": null,
+      "provenance": "Synthetic fixture: original code written for the Contract Auditor repository for Phase 26 benchmarking. Not copied from any third-party source."
+    },
+    {
+      "fixture_id": "PAUTH-009",
+      "file": "PAUTH-009-or-hasrole-protected.sol",
+      "category": "privileged_auth",
+      "expected_label": "safe",
+      "expected_contract": "OrHasRoleProtected",
+      "expected_function": "setFeeRecipient",
+      "expected_behavior": "setFeeRecipient requires operatorCount==0 || hasRole(OPERATOR, msg.sender) (Lista Moolah createMarket shape). No unprotected/weak finding.",
+      "protection_control": "inline require(... || hasRole(role, msg.sender))",
+      "accepted_checks": [
+        "privileged-auth-unprotected",
+        "privileged-auth-weak"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 26 privileged-auth benchmarking."
+    },
+    {
+      "fixture_id": "PAUTH-010",
+      "file": "PAUTH-010-inherited-disable-initializers.sol",
+      "category": "privileged_auth",
+      "expected_label": "safe",
+      "expected_contract": "TrancheImpl",
+      "expected_function": "initialize",
+      "expected_behavior": "initialize has initializer and a base constructor calls _disableInitializers(); implementation cannot be initialized. No weak finding.",
+      "protection_control": "base-contract constructor _disableInitializers()",
+      "accepted_checks": [
+        "privileged-auth-unprotected",
+        "privileged-auth-weak"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 26 privileged-auth benchmarking."
+    },
+    {
+      "fixture_id": "PAUTH-011",
+      "file": "PAUTH-011-own-balance-withdraw-safe.sol",
+      "category": "privileged_auth",
+      "expected_label": "safe",
+      "expected_contract": "OwnBalancePool",
+      "expected_function": "withdraw",
+      "expected_behavior": "withdraw debits _balances[msg.sender] (require-bounded) and pays msg.sender: pull payment (BlurPool.withdraw shape). No unprotected finding.",
+      "protection_control": "caller-own balance debited before send",
+      "accepted_checks": [
+        "privileged-auth-unprotected",
+        "privileged-auth-weak"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 27 benchmarking."
+    },
+    {
+      "fixture_id": "PAUTH-012",
+      "file": "PAUTH-012-unprotected-pool-drain.sol",
+      "category": "privileged_auth",
+      "expected_label": "vulnerable",
+      "expected_contract": "DrainablePool",
+      "expected_function": "withdraw",
+      "expected_behavior": "withdraw pays any amount of pooled ETH to any caller without debiting their balance: unprotected fund withdrawal.",
+      "protection_control": null,
+      "accepted_checks": [
+        "privileged-auth-unprotected"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 27 benchmarking."
+    },
+    {
+      "fixture_id": "PAUTH-013",
+      "file": "PAUTH-013-locker-helper-guard-safe.sol",
+      "category": "privileged_auth",
+      "expected_label": "safe",
+      "expected_contract": "LockerFees",
+      "expected_function": "collectFees",
+      "expected_behavior": "collectFees guarded by internal _requireLocker() that reverts unless msg.sender is the locker (Ekubo Core.collectFees shape). No unprotected finding.",
+      "protection_control": "internal sender-revert helper as first statement",
+      "accepted_checks": [
+        "privileged-auth-unprotected",
+        "privileged-auth-weak"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 28 benchmarking."
+    },
+    {
+      "fixture_id": "PAUTH-014",
+      "file": "PAUTH-014-locker-helper-noguard.sol",
+      "category": "privileged_auth",
+      "expected_label": "vulnerable",
+      "expected_contract": "LockerFeesOpen",
+      "expected_function": "collectFees",
+      "expected_behavior": "helper only reads the locker without reverting; anyone sends the whole balance to any address.",
+      "protection_control": null,
+      "accepted_checks": [
+        "privileged-auth-unprotected"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 28 benchmarking."
+    },
+    {
+      "fixture_id": "KX-001",
+      "file": "KX-001-compound-empty-market-vuln.sol",
+      "category": "known_exploit",
+      "expected_label": "vulnerable",
+      "expected_contract": "CTokenLike",
+      "expected_function": "exchangeRateStored",
+      "expected_behavior": "compound-empty-market matcher: flags CTokenLike.exchangeRateStored.",
+      "protection_control": null,
+      "accepted_checks": [
+        "compound-empty-market"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 32 benchmarking."
+    },
+    {
+      "fixture_id": "KX-002",
+      "file": "KX-002-compound-empty-market-safe.sol",
+      "category": "known_exploit",
+      "expected_label": "safe",
+      "expected_contract": "CTokenSeeded",
+      "expected_function": "exchangeRateStored",
+      "expected_behavior": "compound-empty-market matcher: does not flag CTokenSeeded.exchangeRateStored.",
+      "protection_control": "see fixture header",
+      "accepted_checks": [
+        "compound-empty-market"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 32 benchmarking."
+    },
+    {
+      "fixture_id": "KX-003",
+      "file": "KX-003-reward-acc-vuln.sol",
+      "category": "known_exploit",
+      "expected_label": "vulnerable",
+      "expected_contract": "ChefBug",
+      "expected_function": "deposit",
+      "expected_behavior": "reward-acc-per-share matcher: flags ChefBug.deposit.",
+      "protection_control": null,
+      "accepted_checks": [
+        "reward-acc-per-share"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 32 benchmarking."
+    },
+    {
+      "fixture_id": "KX-004",
+      "file": "KX-004-reward-acc-safe.sol",
+      "category": "known_exploit",
+      "expected_label": "safe",
+      "expected_contract": "ChefOk",
+      "expected_function": "deposit",
+      "expected_behavior": "reward-acc-per-share matcher: does not flag ChefOk.deposit.",
+      "protection_control": "see fixture header",
+      "accepted_checks": [
+        "reward-acc-per-share"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 32 benchmarking."
+    },
+    {
+      "fixture_id": "KX-005",
+      "file": "KX-005-bridge-unvalidated-vuln.sol",
+      "category": "known_exploit",
+      "expected_label": "vulnerable",
+      "expected_contract": "BridgeTokenOpen",
+      "expected_function": "lzReceive",
+      "expected_behavior": "bridge-message-validation matcher: flags BridgeTokenOpen.lzReceive.",
+      "protection_control": null,
+      "accepted_checks": [
+        "bridge-message-validation"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 32 benchmarking."
+    },
+    {
+      "fixture_id": "KX-006",
+      "file": "KX-006-bridge-validated-safe.sol",
+      "category": "known_exploit",
+      "expected_label": "safe",
+      "expected_contract": "BridgeTokenChecked",
+      "expected_function": "lzReceive",
+      "expected_behavior": "bridge-message-validation matcher: does not flag BridgeTokenChecked.lzReceive.",
+      "protection_control": "see fixture header",
+      "accepted_checks": [
+        "bridge-message-validation"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 32 benchmarking."
+    },
+    {
+      "fixture_id": "KX-007",
+      "file": "KX-007-reward-accrue-helper-safe.sol",
+      "category": "known_exploit",
+      "expected_label": "safe",
+      "expected_contract": "AccrueStaking",
+      "expected_function": "unstake",
+      "expected_behavior": "reward-acc-per-share matcher: does not flag; _accrue -> _settle updates rewardPerShare before the stake changes.",
+      "protection_control": "private accrue helper before stake write",
+      "accepted_checks": [
+        "reward-acc-per-share"
+      ],
+      "analyzer_family": "generic",
+      "compiler": "solc 0.5.8 (PATH); pragma ^0.5.8",
+      "requires_tools": [],
+      "evaluable": true,
+      "provenance": "Synthetic fixture: original code for Contract Auditor Phase 32 benchmarking."
+    }
+  ]
+}

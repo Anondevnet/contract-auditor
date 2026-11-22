@@ -1,0 +1,4 @@
+{
+  "programs": [],
+  "note": "Local registry of OFFICIAL bug-bounty program URLs. Entries must be added by a human from the program's own domain: {\"name\": \"...\", \"official_url\": \"...\"}. Empty by default — this tool never invents programs."
+}

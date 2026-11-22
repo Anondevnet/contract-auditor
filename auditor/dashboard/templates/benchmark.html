@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Vulnerability Detection Benchmark</h2>
+    <p class="subtitle">
+        Fixture corpus scored against ground truth per
+        <span class="mono">benchmarks/PROTOCOL.md</span>.
+        Scores measure detection only — they are not a security guarantee.
+    </p>
+</div>
+
+<div class="card" id="bench-empty" style="display:none;">
+    <div class="card-body">
+        <p class="muted">
+            No benchmark run has been recorded yet. Run
+            <span class="mono">python3 audit.py benchmark</span> to evaluate
+            the fixture corpus; results are stored in
+            <span class="mono">benchmark_store.db</span>.
+        </p>
+    </div>
+</div>
+
+<div id="bench-content" style="display:none;">
+    <div class="card">
+        <div class="card-header">
+            <h3>Latest run</h3>
+            <div class="header-right">
+                <span class="muted" id="bench-store"></span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="meta-grid">
+                <div class="storage-item">
+                    <span class="label">Run</span>
+                    <span class="value mono" id="bench-run-id">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">Status</span>
+                    <span class="value" id="bench-status">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">Started</span>
+                    <span class="value" id="bench-started">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">Finished</span>
+                    <span class="value" id="bench-finished">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">Duration</span>
+                    <span class="value" id="bench-duration">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">Toolchain</span>
+                    <span class="value mono" id="bench-toolchain">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Overall metrics</h3>
+            <div class="header-right">
+                <span class="muted" id="bench-fixtures-count"></span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="meta-grid">
+                <div class="storage-item">
+                    <span class="label">Precision</span>
+                    <span class="value mono" id="bench-precision">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">Recall</span>
+                    <span class="value mono" id="bench-recall">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">F1</span>
+                    <span class="value mono" id="bench-f1">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">TP</span>
+                    <span class="value mono" id="bench-tp">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">FP</span>
+                    <span class="value mono" id="bench-fp">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">FN</span>
+                    <span class="value mono" id="bench-fn">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">TN</span>
+                    <span class="value mono" id="bench-tn">-</span>
+                </div>
+            </div>
+            <p class="muted" id="bench-excluded" style="margin-top:12px;"></p>
+        </div>
+    </div>
+
+    <div class="card" id="bench-compare-card" style="display:none;">
+        <div class="card-header">
+            <h3>Baseline comparison</h3>
+            <div class="header-right">
+                <span class="muted" id="bench-compare-note"></span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="meta-grid">
+                <div class="storage-item">
+                    <span class="label">Baseline</span>
+                    <span class="value mono" id="bench-compare-baseline">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">Comparable</span>
+                    <span class="value" id="bench-compare-comparable">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">&Delta; Precision</span>
+                    <span class="value mono" id="bench-compare-dp">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">&Delta; Recall</span>
+                    <span class="value mono" id="bench-compare-dr">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">&Delta; F1</span>
+                    <span class="value mono" id="bench-compare-df">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="label">Regressions</span>
+                    <span class="value" id="bench-compare-regressions">-</span>
+                </div>
+            </div>
+            <p class="muted" id="bench-compare-reason" style="margin-top:12px;"></p>
+            <ul id="bench-compare-changes" style="margin-top:8px; padding-left:20px;"></ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Per-category</h3>
+        </div>
+        <div class="card-body" style="padding:0;">
+            <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Fixtures</th>
+                        <th>Evaluable</th>
+                        <th>TP</th>
+                        <th>FP</th>
+                        <th>FN</th>
+                        <th>TN</th>
+                        <th>Precision</th>
+                        <th>Recall</th>
+                        <th>F1</th>
+                    </tr>
+                </thead>
+                <tbody id="bench-categories"></tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Fixture results</h3>
+            <div class="header-right">
+                <span class="muted">Not-evaluable fixtures are never counted as TN or FN</span>
+            </div>
+        </div>
+        <div class="card-body" style="padding:0;">
+            <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Fixture</th>
+                        <th>Category</th>
+                        <th>Label</th>
+                        <th>Status</th>
+                        <th>Verdict</th>
+                        <th>Matched check</th>
+                        <th>Other findings</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody id="bench-results"></tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Run history</h3>
+            <div class="header-right">
+                <span class="muted">Click a run to display it</span>
+            </div>
+        </div>
+        <div class="card-body" style="padding:0;">
+            <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Run</th>
+                        <th>Finished</th>
+                        <th>Status</th>
+                        <th>TP</th>
+                        <th>FP</th>
+                        <th>FN</th>
+                        <th>TN</th>
+                    </tr>
+                </thead>
+                <tbody id="bench-runs"></tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card" id="bench-error" style="display:none;">
+    <div class="card-body">
+        <p class="muted" id="bench-error-text"></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/benchmark.js"></script>
+{% endblock %}

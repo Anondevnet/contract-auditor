@@ -1,0 +1,12 @@
+# Direct runtime dependencies of contract-auditor, pinned to the
+# versions this environment was validated against (Python 3.11.9).
+# Transitive deps (starlette, anyio, …) resolve from these pins.
+# External analyzers (slither-analyzer, solc, forge) are NOT pip deps —
+# they are installed system tools probed at runtime.
+fastapi==0.128.8
+jinja2==3.1.6
+pydantic==2.9.2
+uvicorn==0.51.0
+websockets==17.2
+httpx==0.28.1
+python-multipart==0.0.20

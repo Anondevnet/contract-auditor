@@ -1,0 +1,19 @@
+services:
+  auditor:
+    build: .
+    image: contract-auditor-demo:local
+    ports:
+      - "8080:8080"
+    environment:
+      AUDITOR_MODE: public
+      AUDITOR_LLM_PROVIDER: none
+      AUDITOR_PUBLIC_DATA_DIR: /data
+      AUDITOR_RATE_LIMIT_PER_HOUR: "10"
+      AUDITOR_MAX_CONCURRENT_SCANS: "2"
+      AUDITOR_DAILY_SPEND_USD: "0"
+    volumes:
+      - auditor-demo-data:/data
+    restart: unless-stopped
+
+volumes:
+  auditor-demo-data:

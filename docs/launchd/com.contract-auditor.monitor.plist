@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Phase 18.1 TEMPLATE — NOT installed by the auditor.
+  To use it yourself: replace __PROJECT_DIR__ with the absolute project path,
+  copy to ~/Library/LaunchAgents/, then:
+      launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.contract-auditor.monitor.plist
+  Stop / remove:
+      launchctl bootout gui/$(id -u)/com.contract-auditor.monitor
+  The Etherscan key is NOT in this file: scripts/run_monitor.sh reads it from
+  the macOS Keychain (service "etherscan-api-key").
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.contract-auditor.monitor</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/zsh</string>
+        <string>__PROJECT_DIR__/scripts/run_monitor.sh</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>__PROJECT_DIR__</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+    <key>StandardOutPath</key>
+    <string>__PROJECT_DIR__/reports/monitor.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>__PROJECT_DIR__/reports/monitor.err.log</string>
+</dict>
+</plist>

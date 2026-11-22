@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contract-auditor/schemas/audit_run.schema.json",
+  "title": "AuditRun",
+  "description": "Reproducibility manifest. Answers: what did the auditor know, and with which tools, when it reached a conclusion?",
+  "type": "object",
+  "required": [
+    "audit_id",
+    "schema_version",
+    "auditor_version",
+    "started_at",
+    "tool_versions",
+    "findings"
+  ],
+  "properties": {
+    "audit_id": { "type": "string" },
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "auditor_version": { "type": "string" },
+    "started_at": { "type": "string" },
+    "finished_at": { "type": ["string", "null"] },
+    "chain": { "type": ["string", "null"] },
+    "address": { "type": ["string", "null"] },
+    "tool_versions": {
+      "type": "object",
+      "description": "Exact detected version per tool. Null means NOT detected, which must never be rendered as passing.",
+      "additionalProperties": { "type": ["string", "null"] }
+    },
+    "compiler_version": {
+      "type": ["string", "null"],
+      "description": "The compiler actually used, distinct from any solc merely present on PATH."
+    },
+    "model_name": { "type": ["string", "null"] },
+    "configuration": { "type": "object" },
+    "evidence_hashes": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+    },
+    "findings_summary": {
+      "type": "object",
+      "additionalProperties": { "type": "integer" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "finding.schema.json" }
+    }
+  }
+}

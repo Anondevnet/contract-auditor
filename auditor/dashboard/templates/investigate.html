@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Investigate finding</h2>
+    <p class="subtitle" id="inv-subtitle">Scan {{ scan_id }} — loading...</p>
+</div>
+
+<div class="card" id="inv-header-card">
+    <div class="card-header">
+        <h3 id="inv-title">Loading...</h3>
+        <div class="header-right" id="inv-badges"></div>
+    </div>
+    <div class="card-body">
+        <div class="inv-toolbar">
+            <div class="state-control">
+                <label for="inv-state-select" class="muted">Triage state</label>
+                <select id="inv-state-select" class="select-sm"></select>
+                <input type="text" id="inv-state-note" class="input-sm" placeholder="Note (optional)" maxlength="300" />
+                <button class="btn btn-primary btn-sm" id="inv-state-apply">Apply state</button>
+            </div>
+            <div class="inv-actions">
+                <button class="btn btn-secondary btn-sm" id="inv-retest-btn">Retest</button>
+                <button class="btn btn-secondary btn-sm" id="inv-ai-btn">Run AI Audit</button>
+                <button class="btn btn-secondary btn-sm" id="inv-bounty-btn">Check bounty</button>
+                <button class="btn btn-primary btn-sm" id="inv-finrisk-review-btn">Review financial risk</button>
+                <button class="btn btn-secondary btn-sm" id="inv-finrisk-rerun-btn" style="display:none;">Re-run review</button>
+                <a class="btn btn-secondary btn-sm" id="inv-export-json" href="#">Export JSON</a>
+                <a class="btn btn-secondary btn-sm" id="inv-export-md" href="#">Export MD</a>
+                <button class="btn btn-primary btn-sm" id="inv-propose-btn" style="display:none;">Propose patch (OpenCode)</button>
+                <a class="btn btn-link" href="/findings">Back to findings</a>
+            </div>
+        </div>
+        <div class="inv-message" id="inv-message" style="display:none;"></div>
+    </div>
+</div>
+
+<!-- Live job panel (retest / AI audit) -->
+<div class="card" id="inv-job-card" style="display:none;">
+    <div class="card-header">
+        <h3>Job in progress</h3>
+        <div class="header-right">
+            <span class="muted" id="inv-job-elapsed"></span>
+            <button class="btn btn-secondary btn-sm" id="inv-job-cancel">Cancel</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="job-message" id="inv-job-message">Starting...</div>
+        <ol class="stage-list" id="inv-job-stages"></ol>
+        <details class="log-details">
+            <summary class="muted">Log</summary>
+            <pre class="log-output" id="inv-job-log"></pre>
+        </details>
+        <div id="inv-job-result" style="display:none;"></div>
+    </div>
+</div>
+
+<!-- Executive summary -->
+<div class="card" id="inv-summary-card">
+    <div class="card-header">
+        <h3>Executive summary</h3>
+        <div class="header-right"><span class="badge origin-scan">deterministic_scan_record</span></div>
+    </div>
+    <div class="card-body" id="inv-summary"><p class="muted">Loading...</p></div>
+</div>
+
+<!-- Protocol & financial impact -->
+<div class="card" id="inv-protocol-card">
+    <div class="card-header">
+        <h3>Protocol &amp; financial impact</h3>
+        <div class="header-right" id="inv-classification-badge"></div>
+    </div>
+    <div class="card-body">
+        <div id="inv-classification"></div>
+        <h4 class="inv-section-title">Protocol / scope</h4>
+        <div id="inv-protocol"></div>
+        <h4 class="inv-section-title">Financial impact</h4>
+        <div id="inv-financial"></div>
+    </div>
+</div>
+
+<!-- Two-column investigation -->
+<div class="inv-grid" id="inv-grid">
+    <section class="card inv-panel" id="inv-attacker-panel">
+        <div class="card-header">
+            <h3>Attacker / risk view</h3>
+        </div>
+        <div class="card-body" id="inv-attacker"><p class="muted">Loading...</p></div>
+    </section>
+    <section class="card inv-panel" id="inv-defender-panel">
+        <div class="card-header">
+            <h3>White-hat / remediation view</h3>
+        </div>
+        <div class="card-body" id="inv-defender"><p class="muted">Loading...</p></div>
+    </section>
+</div>
+
+<!-- Severity provenance + duplicates -->
+<div class="card" id="inv-provenance-card">
+    <div class="card-header"><h3>Severity provenance &amp; duplicates</h3></div>
+    <div class="card-body">
+        <div id="inv-provenance"></div>
+        <h4 class="inv-section-title">Duplicate group</h4>
+        <div id="inv-duplicates"></div>
+    </div>
+</div>
+
+<!-- Second-stage financial-risk review -->
+<details class="card" id="inv-finrisk-card">
+    <summary class="card-header">
+        <h3>Financial risk review (second stage)</h3>
+        <span class="muted" id="inv-finrisk-state-label">loading...</span>
+    </summary>
+    <div class="card-body" id="inv-finrisk">
+        <p class="muted">Loading...</p>
+    </div>
+</details>
+
+<details class="card" id="inv-evidence-card" open>
+    <summary class="card-header"><h3>Evidence</h3></summary>
+    <div class="card-body" id="inv-evidence"></div>
+</details>
+
+<details class="card" id="inv-ai-card" style="display:none;">
+    <summary class="card-header">
+        <h3>AI analysis</h3>
+        <span class="badge origin-ai">generated_ai_analysis</span>
+    </summary>
+    <div class="card-body" id="inv-ai"></div>
+</details>
+
+<details class="card" id="inv-unknowns-card">
+    <summary class="card-header"><h3>Unknowns and limitations</h3></summary>
+    <div class="card-body" id="inv-unknowns"></div>
+</details>
+
+<div class="card" id="inv-bounty-card" style="display:none;">
+    <div class="card-header"><h3>Bounty check</h3></div>
+    <div class="card-body">
+        <div class="bounty-form">
+            <input type="text" id="bounty-project" class="input-sm" placeholder="Project name (from scan metadata if set)" />
+            <input type="url" id="bounty-url" class="input-sm" placeholder="Official program URL (https://...)" />
+            <button class="btn btn-secondary btn-sm" id="bounty-run">Run read-only check</button>
+        </div>
+        <div id="bounty-result" class="bounty-result"></div>
+    </div>
+</div>
+
+<div class="card" id="inv-propose-card" style="display:none;">
+    <div class="card-header">
+        <h3>Proposed patch</h3>
+        <div class="header-right">
+            <button class="btn btn-primary btn-sm" id="inv-apply-btn" style="display:none;">Apply (requires approval)</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <p class="muted" id="propose-status">No proposal yet.</p>
+        <pre class="diff-output" id="propose-diff" style="display:none;"></pre>
+    </div>
+</div>
+
+<div class="card" id="inv-history-card">
+    <div class="card-header"><h3>State history</h3></div>
+    <div class="card-body" id="inv-history"></div>
+</div>
+
+<details class="card" id="inv-glossary-card" style="display:none;">
+    <summary class="card-header"><h3>Glossary</h3></summary>
+    <div class="card-body" id="inv-glossary"></div>
+</details>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/investigate.js"></script>
+{% endblock %}

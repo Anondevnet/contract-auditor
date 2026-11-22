@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h2>New Ethereum Audit</h2>
+    <p class="subtitle">Discover contracts and start an audit without supplying source code</p>
+</div>
+
+<div class="scan-options">
+    <div class="option-tabs">
+        <button class="tab-btn active" data-tab="discovery">Automatic Discovery</button>
+        <button class="tab-btn" data-tab="address">Contract Address</button>
+        <button class="tab-btn" data-tab="local">Local Project</button>
+    </div>
+
+    <!-- Local Project Tab -->
+    <div class="tab-content" id="tab-local">
+        <form id="local-scan-form" class="scan-form">
+            <div class="form-group">
+                <label for="local-path">Project Path</label>
+                <div class="path-input-group">
+                    <input type="text" id="local-path" name="path" placeholder="/path/to/solidity/project" required>
+                    <span class="path-hint">Path to a .sol file or directory containing Solidity files</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Tools</label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="run-static-analysis" name="run_static_analysis" checked>
+                    <span class="checkmark"></span>
+                    Static analysis (Slither)
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="validate-project" name="validate_project">
+                    <span class="checkmark"></span>
+                    Foundry build validation (forge build)
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="run-tests" name="run_tests">
+                    <span class="checkmark"></span>
+                    Foundry tests (forge test)
+                </label>
+                <span class="help-text">
+                    Each tool's outcome is recorded separately on the scan. Build/test
+                    results are compilation evidence, not security results; Slither
+                    findings are alerts for review, not confirmed vulnerabilities.
+                    Zero findings means "no findings detected by the checks that completed".
+                </span>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="local-scan-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 12.21 3 7 7 0 0 0 3 12.79"></path>
+                    </svg>
+                    Start Local Scan
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="tab-content active" id="tab-discovery">
+        <div class="discovery-intro">
+            <span class="eyebrow">ETHEREUM · SOURCE-AWARE AUDIT</span>
+            <h3>Find contracts worth reviewing automatically</h3>
+            <p>Scan public deployment activity and DeFi registries, retrieve verified source, resolve proxies, rank targets by measured exposure, and run the available security analyzers. You do not need to paste or upload contract source code.</p>
+        </div>
+        <section class="discovery-signal" id="audit-signal" data-run-state="idle" aria-label="Live audit run status">
+            <div class="discovery-signal-head">
+                <div>
+                    <span class="signal-eyebrow">LIVE AUDIT SIGNAL</span>
+                    <span class="signal-network">ETH MAINNET <i>·</i> READ ONLY</span>
+                </div>
+                <div class="signal-state"><i class="signal-state-dot" aria-hidden="true"></i><b id="audit-live-state" aria-live="polite">STANDBY</b></div>
+            </div>
+            <div class="signal-graph" aria-hidden="true">
+                <svg class="signal-svg" viewBox="0 0 1000 150" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="signal-laser-red" x1="0" x2="1">
+                            <stop offset="0" stop-color="#ff3b30" stop-opacity=".15" />
+                            <stop offset=".48" stop-color="#ff5138" />
+                            <stop offset="1" stop-color="#ffb02e" stop-opacity=".55" />
+                        </linearGradient>
+                        <linearGradient id="signal-laser-electric" x1="0" x2="1">
+                            <stop offset="0" stop-color="#ffb02e" stop-opacity=".2" />
+                            <stop offset=".52" stop-color="#ffe95c" />
+                            <stop offset="1" stop-color="#57d8ff" stop-opacity=".7" />
+                        </linearGradient>
+                        <filter id="signal-glow" x="-30%" y="-60%" width="160%" height="220%">
+                            <feGaussianBlur stdDeviation="3" result="blur" />
+                            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                        </filter>
+                    </defs>
+                    <path class="signal-track" d="M54 75 H946" />
+                    <path class="signal-beam signal-beam-red" d="M54 75 H946" />
+                    <path class="signal-bolt signal-bolt-red" d="M54 112 L112 78 L153 91 L207 38 L258 92 L316 59 L371 103 L427 44 L480 81 L535 34 L589 97 L650 56 L706 101 L765 41 L820 83 L875 54 L946 75" />
+                    <path class="signal-bolt signal-bolt-electric" d="M54 34 L112 70 L154 55 L207 108 L258 57 L316 91 L371 46 L427 105 L480 68 L535 113 L589 52 L650 91 L706 47 L765 107 L820 65 L875 96 L946 34" />
+                    <path class="signal-bolt signal-bolt-blue" d="M146 126 L204 93 L259 115 L315 70 L371 111 L427 61 L482 99 L536 53 L591 113 L648 74 L706 118 L764 61 L820 101 L875 74" />
+                    <circle class="signal-node" cx="90" cy="75" r="7" />
+                    <circle class="signal-node audit-stage-node" data-stage="discover" cx="290" cy="75" r="7" />
+                    <circle class="signal-node audit-stage-node" data-stage="retrieve_source" cx="395" cy="75" r="7" />
+                    <circle class="signal-node audit-stage-node" data-stage="verify_deployment" cx="500" cy="75" r="7" />
+                    <circle class="signal-node audit-stage-node" data-stage="prioritize" cx="605" cy="75" r="7" />
+                    <circle class="signal-node audit-stage-node" data-stage="security_analysis" cx="710" cy="75" r="7" />
+                    <circle class="signal-node" cx="910" cy="75" r="7" />
+                </svg>
+                <div class="signal-core"><span>ETH</span><small>DISCOVERY ENGINE</small></div>
+            </div>
+            <div class="signal-readouts">
+                <div><span>ACTIVE STAGE</span><strong id="audit-stage-label">Awaiting run</strong></div>
+                <div><span>PHASE</span><strong id="audit-phase-count">— / 05</strong></div>
+                <div><span>ELAPSED</span><strong id="audit-elapsed">—</strong></div>
+            </div>
+            <p class="signal-detail discovery-run-status" id="scan-discovery-status" role="status">Press “Run Ethereum discovery + audit” to start the five-stage pass.</p>
+        </section>
+        <div class="pipeline-rail compact-pipeline">
+            <div class="pipeline-node" data-stage="discover"><span class="pipeline-index">01</span><strong>Discover</strong><small>Blocks · protocols · pools</small></div>
+            <div class="pipeline-node" data-stage="retrieve_source"><span class="pipeline-index">02</span><strong>Retrieve</strong><small>Etherscan · Sourcify</small></div>
+            <div class="pipeline-node" data-stage="verify_deployment"><span class="pipeline-index">03</span><strong>Verify</strong><small>Code · proxy · compiler</small></div>
+            <div class="pipeline-node" data-stage="prioritize"><span class="pipeline-index">04</span><strong>Prioritize</strong><small>Value · contract role</small></div>
+            <div class="pipeline-node" data-stage="security_analysis"><span class="pipeline-index">05</span><strong>Analyze</strong><small>Slither · custom checks</small></div>
+        </div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-primary js-discovery-run" data-status-id="scan-discovery-status">Run Ethereum discovery + audit</button>
+            <a class="btn btn-secondary" href="/hunt">Open target hunt</a>
+        </div>
+        <p class="help-text">DEX Screener is a public discovery feed. DEXTools and Arkham can be enabled with API keys. GitHub and Code4rena provide provenance and released audit context. A market listing or explorer verification alone is not an exact local bytecode match.</p>
+    </div>
+
+    <!-- Contract Address Tab -->
+    <div class="tab-content" id="tab-address">
+        <form id="address-scan-form" class="scan-form">
+            <div class="form-group">
+                <label for="address-network">Network</label>
+                <select id="address-network" name="network" required>
+                    <option value="ethereum">Ethereum Mainnet</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="contract-address">Contract Address</label>
+                <div class="path-input-group">
+                    <input type="text" id="contract-address" name="address" placeholder="0x..." pattern="^0x[a-fA-F0-9]{40}$" required>
+                    <span class="path-hint">EVM contract address (0x-prefixed, 40 hex chars)</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="help-text warning">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Requires <code>ETHERSCAN_API_KEY</code> environment variable. Fails clearly if not configured.
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="address-scan-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    Start Address Scan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Job Status Modal -->
+<div class="modal-overlay" id="job-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Scan Started</h3>
+            <button class="modal-close" id="job-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="job-progress">
+                <div class="job-info">
+                    <span class="job-type" id="modal-job-type">Local Scan</span>
+                    <span class="job-id" id="modal-job-id"></span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="modal-progress-bar"></div>
+                </div>
+                <div class="progress-text" id="modal-progress-text">Queued...</div>
+                <div class="job-status" id="modal-job-status">Queued</div>
+                <ul class="job-stages" id="modal-job-stages"></ul>
+            </div>
+            <div class="job-output" id="job-output"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="modal-view-results" style="display:none;">View Results</button>
+            <button class="btn btn-secondary" id="modal-close-btn">Close</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/scan.js"></script>
+{% endblock %}

@@ -1,0 +1,12 @@
+{
+  "_comment": "Pinned upstream sources for fork-diff. Fetched by scripts/fetch_upstream_corpus.sh into corpus/upstream/ (gitignored). Commit hashes pin exact bytes.",
+  "entries": [
+    {"name": "compound-v2.8.1", "repo": "https://github.com/compound-finance/compound-protocol", "commit": "23eac9425accafb82551777c93896ee7678a85a3", "paths": ["contracts"]},
+    {"name": "compound-v2-master", "repo": "https://github.com/compound-finance/compound-protocol", "commit": "a3214f67b73310d547e00fc578e8355911c9d376", "paths": ["contracts"]},
+    {"name": "uniswap-v2-core", "repo": "https://github.com/Uniswap/v2-core", "commit": "6a9e7c97860676e0992f22a49665760444c1cdf5", "paths": ["contracts"]},
+    {"name": "uniswap-v2-periphery", "repo": "https://github.com/Uniswap/v2-periphery", "commit": "ed24991304291297c3b4a52818d02f46a17aa9a2", "paths": ["contracts"]},
+    {"name": "oz-4.9.6", "repo": "https://github.com/OpenZeppelin/openzeppelin-contracts", "commit": "dc44c9f1a4c3b10af99492eed84f83ed244203f6", "paths": ["contracts/token", "contracts/access", "contracts/proxy", "contracts/security", "contracts/utils"]},
+    {"name": "oz-5.0.2", "repo": "https://github.com/OpenZeppelin/openzeppelin-contracts", "commit": "dbb6104ce834628e473d2173bbc9d47f81a9eec3", "paths": ["contracts/token", "contracts/access", "contracts/proxy", "contracts/utils"]},
+    {"name": "sushi-masterchef", "repo": "https://github.com/sushiswap/masterchef", "commit": "4153a98c34e06ee3c373fcff566d1048dcd01666", "paths": ["contracts"]}
+  ]
+}

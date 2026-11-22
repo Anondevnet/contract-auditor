@@ -1,0 +1,532 @@
+{
+  "version": 1,
+  "heuristic_note": "Heuristic band from a static per-category table; not measured for this contract.",
+  "disclaimer": "Exploitability and time bands are static heuristics per vulnerability class, not measurements. Descriptions are defensive summaries of the attack class; no exploit steps are provided.",
+  "fallback": "generic",
+  "classes": {
+    "reentrancy": {
+      "label": "Reentrancy",
+      "exploitability": "moderate",
+      "time_to_exploit": "hours to days",
+      "time_to_fix": "1-4 hours",
+      "slugs": [
+        "reentrancy-eth",
+        "reentrancy-no-eth",
+        "reentrancy-benign",
+        "reentrancy-events",
+        "reentrancy-balance"
+      ],
+      "attack_class": "An external call is made before the contract finishes updating its own state, so the callee can re-enter the same or a related function while balances or flags are stale. Depending on what the stale state guards, an attacker may withdraw funds more than once, mint or transfer more than intended, or corrupt accounting. Preconditions: an external call to an attacker-influenced address (or a token with transfer hooks) that precedes the relevant state write, and no reentrancy guard on every entry point that shares that state.",
+      "remediation": "Apply checks-effects-interactions: perform all state changes before any external call. Add a reentrancy guard (e.g. OpenZeppelin ReentrancyGuard nonReentrant) to every function that touches the shared state, including view-dependent paths used by other contracts (read-only reentrancy). Prefer pull-payment patterns over pushing ETH/tokens.",
+      "fix_pattern": "function withdraw(uint256 amount) external nonReentrant {\n    require(balances[msg.sender] >= amount, \"insufficient\");\n    balances[msg.sender] -= amount;          // effects first\n    (bool ok, ) = msg.sender.call{value: amount}(\"\"); // interaction last\n    require(ok, \"transfer failed\");\n}",
+      "exposure": {
+        "model": "drain_all",
+        "factor": 0.5,
+        "low": 0.1,
+        "high": 1.0,
+        "assumption": "Reentrancy on value-moving paths can typically drain most of the holdings."
+      }
+    },
+    "access_control": {
+      "label": "Access control",
+      "exploitability": "trivial",
+      "time_to_exploit": "minutes to hours",
+      "time_to_fix": "1-2 hours",
+      "slugs": [
+        "tx-origin",
+        "missing-msg-sender-check",
+        "suicidal",
+        "protected-vars",
+        "unprotected-upgrade",
+        "incorrect-modifier"
+      ],
+      "attack_class": "A privileged action (self-destruct, upgrade, ownership or parameter change, fund movement) can be reached by callers who should not have it, or authorisation relies on tx.origin, which a malicious intermediate contract can satisfy by tricking a privileged user into calling it. An attacker may take over the contract, destroy it, or redirect funds. Preconditions: the privileged function is externally reachable and its guard is missing, incomplete, or bypassable.",
+      "remediation": "Gate every privileged function with an explicit role check on msg.sender (Ownable / AccessControl), never tx.origin. Initialise upgradeable implementations in the constructor with _disableInitializers() and protect upgradeTo/initialize. Add tests that unprivileged callers revert.",
+      "fix_pattern": "function setFeeRecipient(address r) external onlyOwner {\n    require(r != address(0), \"zero\");\n    feeRecipient = r;\n    emit FeeRecipientSet(r);\n}",
+      "exposure": {
+        "model": "drain_all",
+        "factor": 0.75,
+        "low": 0.25,
+        "high": 1.0,
+        "assumption": "Missing/bypassable authorisation on a privileged path can usually move all holdings."
+      }
+    },
+    "privileged_auth": {
+      "label": "Privileged authorization",
+      "exploitability": "trivial",
+      "time_to_exploit": "minutes to hours when UNPROTECTED; n/a when PROTECTED",
+      "time_to_fix": "1-4 hours",
+      "slugs": [
+        "privileged-auth-unprotected",
+        "privileged-auth-weak",
+        "privileged-auth-protected"
+      ],
+      "attack_class": "A privileged action (ownership change, upgrade, withdraw/mint/fees, oracle or initializer) is reachable without a sufficient msg.sender guard (UNPROTECTED), gated only by tx.origin or a similarly weak check (WEAK), or correctly gated (PROTECTED \u2014 centralization residual only). Outsiders can call UNPROTECTED paths; WEAK paths may be phishable via tx.origin. PROTECTED findings are not outsider-exploitable by themselves.",
+      "remediation": "Gate every privileged function with an explicit msg.sender role check (Ownable / AccessControl / custom controller). Never rely on tx.origin. Protect upgradeTo/initialize; use two-step ownership and timelocked multisigs for withdraw/mint/fee sinks.",
+      "fix_pattern": "function withdraw(uint256 amount) external onlyOwner nonReentrant {\n    _withdraw(msg.sender, amount);\n}",
+      "exposure": {
+        "model": "drain_all",
+        "factor": 0.5,
+        "low": 0.0,
+        "high": 1.0,
+        "assumption": "UNPROTECTED/WEAK privileged paths may move holdings; PROTECTED is centralization only (factor applied only when severity stays elevated)."
+      }
+    },
+    "privileged_change": {
+      "label": "Unsafe privileged configuration",
+      "exploitability": "hard",
+      "time_to_exploit": "days (requires privileged mistake or key)",
+      "time_to_fix": "under 1 hour",
+      "slugs": [
+        "missing-zero-check"
+      ],
+      "attack_class": "A privileged setter accepts unchecked input such as the zero address, so an operator mistake or a compromised admin key can brick functionality or send funds to an unrecoverable address. This is primarily a resilience issue: an outside attacker usually needs a privileged key or a social-engineering step first.",
+      "remediation": "Validate configuration inputs (non-zero addresses, sane bounds), emit events for every change, and consider two-step ownership transfer and timelocks for sensitive parameters.",
+      "fix_pattern": "function setOracle(address o) external onlyOwner {\n    require(o != address(0), \"zero address\");\n    oracle = o;\n    emit OracleSet(o);\n}",
+      "exposure": {
+        "model": "partial",
+        "factor": 0.05,
+        "low": 0.0,
+        "high": 0.25,
+        "assumption": "Privileged parameter change without validation: indirect, partial loss at most."
+      }
+    },
+    "delegatecall": {
+      "label": "Controlled delegatecall",
+      "exploitability": "trivial",
+      "time_to_exploit": "minutes to hours",
+      "time_to_fix": "2-8 hours",
+      "slugs": [
+        "controlled-delegatecall",
+        "delegatecall-loop"
+      ],
+      "attack_class": "delegatecall executes foreign code in this contract's storage context. If the target or calldata is caller-controlled, an attacker can run arbitrary logic as the contract: overwrite owner slots, drain balances, or self-destruct. Inside a loop with msg.value it can also reuse the same ETH value repeatedly. Preconditions: an externally reachable path where the delegatecall target or calldata is influenced by the caller.",
+      "remediation": "Never delegatecall to user-supplied addresses. Restrict targets to an immutable or governance-controlled allow-list, keep storage layouts compatible, and avoid delegatecall inside loops that read msg.value.",
+      "fix_pattern": "address public immutable implementation;\nfunction _forward(bytes calldata data) internal {\n    (bool ok, ) = implementation.delegatecall(data); // fixed, trusted target only\n    require(ok);\n}",
+      "exposure": {
+        "model": "drain_all",
+        "factor": 1.0,
+        "low": 0.5,
+        "high": 1.0,
+        "assumption": "Controlled delegatecall gives full control of the contract's storage and funds."
+      }
+    },
+    "arbitrary_transfer": {
+      "label": "Arbitrary token/ETH transfer",
+      "exploitability": "trivial",
+      "time_to_exploit": "minutes",
+      "time_to_fix": "1-4 hours",
+      "slugs": [
+        "arbitrary-send-erc20",
+        "arbitrary-send-erc20-permit",
+        "arbitrary-send-eth",
+        "msg-value-loop"
+      ],
+      "attack_class": "Funds can be sent to, or pulled from, an address the caller chooses: for example transferFrom with a caller-supplied 'from', or ETH sent to an arbitrary destination. Any user who previously approved the contract, or the contract's own balance, may be drained. Reusing msg.value in a loop can credit one payment many times. Preconditions: the transfer parameters are attacker-influenced and not tied to msg.sender or validated accounting.",
+      "remediation": "Bind the source of transferFrom to msg.sender (or a verified signature), send ETH only to recorded beneficiaries, and track per-iteration value explicitly instead of reusing msg.value in loops.",
+      "fix_pattern": "function deposit(uint256 amount) external {\n    token.safeTransferFrom(msg.sender, address(this), amount); // 'from' is the caller\n    balances[msg.sender] += amount;\n}",
+      "exposure": {
+        "model": "drain_all",
+        "factor": 0.75,
+        "low": 0.25,
+        "high": 1.0,
+        "assumption": "Arbitrary sends can move the contract's ETH/tokens to an attacker-chosen address."
+      }
+    },
+    "unchecked_call": {
+      "label": "Unchecked external call / return value",
+      "exploitability": "moderate",
+      "time_to_exploit": "hours to days",
+      "time_to_fix": "under 1 hour",
+      "slugs": [
+        "unchecked-transfer",
+        "unchecked-lowlevel",
+        "unchecked-send",
+        "unused-return"
+      ],
+      "attack_class": "The contract ignores whether an external call or token transfer succeeded. Tokens that return false instead of reverting, or failing low-level calls, leave the contract believing a payment happened when it did not, which can credit deposits that never arrived or skip refunds. Preconditions: a token or callee that can fail silently on the affected path.",
+      "remediation": "Check every low-level call's success flag, use SafeERC20 (safeTransfer/safeTransferFrom) for tokens, and handle return values of external functions you rely on.",
+      "fix_pattern": "using SafeERC20 for IERC20;\ntoken.safeTransfer(to, amount);\n(bool ok, ) = to.call{value: v}(\"\");\nrequire(ok, \"call failed\");",
+      "exposure": {
+        "model": "partial",
+        "factor": 0.05,
+        "low": 0.0,
+        "high": 0.25,
+        "assumption": "Ignored call results cause accounting drift; loss is usually partial."
+      }
+    },
+    "arithmetic": {
+      "label": "Arithmetic / precision",
+      "exploitability": "moderate",
+      "time_to_exploit": "hours to days",
+      "time_to_fix": "1-4 hours",
+      "slugs": [
+        "divide-before-multiply",
+        "incorrect-exp",
+        "incorrect-shift"
+      ],
+      "attack_class": "Integer arithmetic loses precision (division before multiplication), uses ^ (XOR) where exponentiation was intended, or has shift operands swapped. The resulting values can be systematically wrong; when they feed prices, shares or fees an attacker may repeat small favourable roundings or exploit a mis-computed constant. Preconditions: the affected value influences balances, prices or limits.",
+      "remediation": "Multiply before dividing (or use mulDiv with explicit rounding direction), use ** for exponentiation, double-check shift operand order, and add property tests around rounding.",
+      "fix_pattern": "// before: uint256 fee = amount / 10000 * bps;\nuint256 fee = Math.mulDiv(amount, bps, 10_000); // multiply first, explicit rounding",
+      "exposure": {
+        "model": "partial",
+        "factor": 0.1,
+        "low": 0.0,
+        "high": 0.5,
+        "assumption": "Rounding/precision issues leak value over time; rarely the full balance."
+      }
+    },
+    "logic_error": {
+      "label": "Logic / comparison error",
+      "exploitability": "moderate",
+      "time_to_exploit": "hours to days",
+      "time_to_fix": "1-4 hours",
+      "slugs": [
+        "incorrect-equality",
+        "tautology",
+        "tautological-compare",
+        "boolean-cst",
+        "incorrect-unary",
+        "msg-value-in-nonpayable",
+        "locked-ether",
+        "codex"
+      ],
+      "attack_class": "A condition is always true/false, relies on strict equality with a balance an outsider can change (e.g. by force-sending ETH), or ETH can enter but never leave. Guards may silently not guard, state machines can be stuck, or funds can be locked permanently. Preconditions: the faulty condition sits on a security- or liveness-relevant path.",
+      "remediation": "Replace strict balance equality with >=/<= or internal accounting, remove constant conditions, make sure payable contracts expose a withdrawal path, and cover branch outcomes with tests.",
+      "fix_pattern": "// before: require(address(this).balance == target);\nrequire(totalDeposited >= target); // internal accounting, not raw balance",
+      "exposure": {
+        "model": "partial",
+        "factor": 0.05,
+        "low": 0.0,
+        "high": 0.25,
+        "assumption": "Logic pitfalls: small share of holdings assumed at risk."
+      }
+    },
+    "storage_state_integrity": {
+      "label": "Storage / state integrity",
+      "exploitability": "moderate",
+      "time_to_exploit": "hours to days",
+      "time_to_fix": "1-4 hours",
+      "slugs": [
+        "uninitialized-state",
+        "uninitialized-storage",
+        "uninitialized-local",
+        "controlled-array-length",
+        "array-by-reference",
+        "write-after-write",
+        "mapping-deletion",
+        "shadowing-state",
+        "shadowing-abstract",
+        "shadowing-local",
+        "shadowing-builtin",
+        "storage-array"
+      ],
+      "attack_class": "State is read before being initialised, an uninitialised storage pointer aliases important slots, a caller can set an array length directly, a shadowed variable hides the one the code meant to update, or deleting a struct leaves mapping data behind. Effects range from wrong defaults to overwriting arbitrary storage such as the owner slot. Preconditions: the affected variable is security-relevant and reachable from an external call.",
+      "remediation": "Initialise state explicitly, declare data locations (memory/storage) intentionally, never expose raw array length writes, rename shadowing variables, and clear nested mappings explicitly before deleting structs.",
+      "fix_pattern": "// before: Data s; (uninitialised storage pointer in old solc)\nData memory s = Data({owner: msg.sender, amount: 0});",
+      "exposure": {
+        "model": "partial",
+        "factor": 0.1,
+        "low": 0.0,
+        "high": 0.5,
+        "assumption": "Storage corruption may affect a portion of tracked funds."
+      }
+    },
+    "compiler_language_pitfall": {
+      "label": "Compiler / language pitfall",
+      "exploitability": "hard",
+      "time_to_exploit": "days to weeks",
+      "time_to_fix": "1-8 hours",
+      "slugs": [
+        "abiencoderv2-array",
+        "public-mappings-nested",
+        "enum-conversion",
+        "uninitialized-fptr-cst",
+        "constant-function-asm",
+        "constant-function-state",
+        "multiple-constructors",
+        "reused-constructor",
+        "void-cst",
+        "name-reused",
+        "return-leave",
+        "incorrect-return",
+        "variable-scope"
+      ],
+      "attack_class": "Code depends on behaviour affected by known compiler bugs or confusing language rules (ABI encoder v2 array bugs, view functions that write state, assembly return/leave misuse, duplicate constructors, variables used before declaration). The deployed behaviour may differ from what the source appears to say. Exploitation usually needs deep analysis of the specific compiler version and path.",
+      "remediation": "Upgrade to a maintained solc version, remove ambiguous constructs, make mutability declarations accurate, and re-run tests on the compiled bytecode.",
+      "fix_pattern": "pragma solidity 0.8.26; // pin a current compiler\nfunction value() external view returns (uint256) { return _value; } // no state writes in view",
+      "exposure": {
+        "model": "partial",
+        "factor": 0.01,
+        "low": 0.0,
+        "high": 0.1,
+        "assumption": "Language/compiler pitfalls rarely lead to direct loss."
+      }
+    },
+    "signature_hash_collision": {
+      "label": "Signature / hash collision",
+      "exploitability": "moderate",
+      "time_to_exploit": "hours to days",
+      "time_to_fix": "1-4 hours",
+      "slugs": [
+        "encode-packed-collision",
+        "domain-separator-collision"
+      ],
+      "attack_class": "abi.encodePacked of multiple dynamic values can produce the same bytes for different inputs, and a colliding domain separator or selector can make one signed message valid in another context. An attacker may replay or reinterpret a signature or forge a hash-based identifier. Preconditions: the hash is used for authorisation, uniqueness or signatures.",
+      "remediation": "Use abi.encode (not encodePacked) for hashing multiple dynamic values, follow EIP-712 with a unique domain (chainId, verifying contract), and include nonces.",
+      "fix_pattern": "bytes32 h = keccak256(abi.encode(a, b)); // not abi.encodePacked(a, b)",
+      "exposure": {
+        "model": "partial",
+        "factor": 0.1,
+        "low": 0.0,
+        "high": 0.25,
+        "assumption": "Hash/signature collisions can enable unauthorised actions on part of the funds."
+      }
+    },
+    "backdoor_obfuscation": {
+      "label": "Backdoor / obfuscated code",
+      "exploitability": "trivial",
+      "time_to_exploit": "minutes (for the code author)",
+      "time_to_fix": "contract replacement",
+      "slugs": [
+        "backdoor",
+        "rtlo"
+      ],
+      "attack_class": "The source contains a function shaped like a backdoor or uses right-to-left-override characters to make code read differently from how it executes. This usually indicates intent by the deployer: privileged parties may be able to drain or control the contract, and reviewers may be misled. Preconditions: none beyond the presence of the code.",
+      "remediation": "Treat as a trust red flag: do not interact or deposit until the code is independently reviewed. Remove hidden control paths and non-printing characters; redeploy if needed.",
+      "fix_pattern": "// remove the hidden path entirely; rely on documented, access-controlled functions only",
+      "exposure": {
+        "model": "drain_all",
+        "factor": 0.75,
+        "low": 0.25,
+        "high": 1.0,
+        "assumption": "A backdoor typically lets its holder take everything."
+      }
+    },
+    "weak_randomness": {
+      "label": "Weak randomness / block data dependence",
+      "exploitability": "moderate",
+      "time_to_exploit": "hours",
+      "time_to_fix": "2-8 hours",
+      "slugs": [
+        "weak-prng",
+        "timestamp",
+        "gelato-unprotected-randomness"
+      ],
+      "attack_class": "Outcomes depend on block.timestamp, blockhash or similar values that validators, builders or same-block contracts can predict or influence. An attacker may win lotteries, pick favourable outcomes, or time actions around deadlines. Preconditions: something of value depends on the predictable value.",
+      "remediation": "Use a verifiable randomness source (e.g. Chainlink VRF) with request/fulfil separation, and treat timestamps only as coarse time (tolerate ~seconds of drift).",
+      "fix_pattern": "// request randomness from a VRF coordinator and act only in the fulfil callback\nfunction fulfillRandomWords(uint256, uint256[] memory words) internal override { _settle(words[0]); }",
+      "exposure": {
+        "model": "drain_all",
+        "factor": 0.5,
+        "low": 0.1,
+        "high": 1.0,
+        "assumption": "Predictable randomness lets a player win the pot (games/lotteries)."
+      }
+    },
+    "denial_of_service": {
+      "label": "Denial of service / gas griefing",
+      "exploitability": "moderate",
+      "time_to_exploit": "hours",
+      "time_to_fix": "2-8 hours",
+      "slugs": [
+        "calls-loop",
+        "return-bomb"
+      ],
+      "attack_class": "External calls inside loops, or calls that copy unbounded return data, let one misbehaving recipient make a whole operation revert or run out of gas. An attacker can block payouts, liquidations or governance actions for everyone. Preconditions: the attacker can become one of the looped-over recipients or a called contract.",
+      "remediation": "Use pull-over-push payments, bound loop sizes, isolate per-recipient failures, and cap returned data (e.g. ExcessivelySafeCall) when calling untrusted contracts.",
+      "fix_pattern": "mapping(address => uint256) public owed;\nfunction claim() external { uint256 a = owed[msg.sender]; owed[msg.sender] = 0; payable(msg.sender).transfer(a); }",
+      "exposure": {
+        "model": "freeze",
+        "factor": 0.0,
+        "low": 0.0,
+        "high": 0.5,
+        "assumption": "DoS usually freezes rather than steals funds; band covers funds becoming stuck."
+      }
+    },
+    "oracle_staleness": {
+      "label": "Oracle data validation",
+      "exploitability": "moderate",
+      "time_to_exploit": "hours to days (needs oracle stall or volatility)",
+      "time_to_fix": "1-4 hours",
+      "slugs": [
+        "stale-oracle-risk",
+        "chainlink-feed-registry",
+        "chronicle-unchecked-price",
+        "pyth-unchecked-confidence",
+        "pyth-unchecked-publishtime",
+        "pyth-deprecated-functions"
+      ],
+      "attack_class": "A price is consumed without checking freshness, round completeness, confidence or sign. When the feed stalls, deviates or is mis-configured, the contract may value collateral or swaps at a wrong price, letting an attacker borrow too much, avoid liquidation or trade at a stale rate. Preconditions: an oracle outage/heartbeat gap or high volatility on the consumed feed.",
+      "remediation": "Check updatedAt against a per-feed heartbeat, answer > 0, answeredInRound >= roundId (Chainlink) or confidence/publishTime (Pyth); fall back or pause when checks fail; avoid deprecated feed APIs.",
+      "fix_pattern": "(uint80 id, int256 p, , uint256 t, uint80 ans) = feed.latestRoundData();\nrequire(p > 0 && ans >= id && block.timestamp - t <= HEARTBEAT, \"stale price\");",
+      "exposure": {
+        "model": "partial",
+        "factor": 0.1,
+        "low": 0.0,
+        "high": 0.5,
+        "assumption": "Stale prices can be used for mispriced borrowing/liquidation of part of the pool."
+      }
+    },
+    "pool_accounting": {
+      "label": "Pool accounting (balance-based)",
+      "exploitability": "moderate",
+      "time_to_exploit": "hours to days",
+      "time_to_fix": "2-8 hours",
+      "slugs": [
+        "pool-accounting"
+      ],
+      "attack_class": "Pool logic derives amounts from balanceOf(address(this)) without verifying an invariant, so tokens donated or transferred directly into the pool distort reserves. An attacker may skew prices, claim donated value, or break invariant-dependent math. Preconditions: the balance read drives pricing or payouts and direct transfers are possible.",
+      "remediation": "Track reserves in internal storage, update them only through accounted flows, and enforce the pool invariant (e.g. k check) after every state-changing operation.",
+      "fix_pattern": "uint256 amountIn = token.balanceOf(address(this)) - reserve; // measure delta vs tracked reserve\nreserve += amountIn;\nrequire(_k() >= kBefore, \"K\");",
+      "exposure": {
+        "model": "drain_all",
+        "factor": 0.5,
+        "low": 0.1,
+        "high": 1.0,
+        "assumption": "Broken pool invariants can allow draining reserves."
+      }
+    },
+    "erc4626_inflation": {
+      "label": "ERC-4626 share inflation",
+      "exploitability": "moderate",
+      "time_to_exploit": "minutes to hours on an empty vault",
+      "time_to_fix": "1-4 hours",
+      "slugs": [
+        "erc4626-inflation"
+      ],
+      "attack_class": "A vault prices shares with a naive totalSupply/totalAssets ratio. On an empty or near-empty vault, a first depositor can donate assets to inflate the share price so later depositors' deposits round down to zero shares, transferring their value to the attacker. Preconditions: the vault is empty or tiny and allows direct asset donations.",
+      "remediation": "Use virtual shares/assets (OpenZeppelin ERC4626 _decimalsOffset), seed the vault with dead shares at deployment, and enforce minimum shares out on deposit.",
+      "fix_pattern": "function _decimalsOffset() internal pure override returns (uint8) { return 6; }\n// or mint initial dead shares to address(0xdead) at deployment",
+      "exposure": {
+        "model": "partial",
+        "factor": 0.05,
+        "low": 0.0,
+        "high": 0.25,
+        "assumption": "Inflation attack hits the next depositor's assets, not the full vault."
+      }
+    },
+    "l2_cross_chain": {
+      "label": "L2 / cross-chain messaging",
+      "exploitability": "hard",
+      "time_to_exploit": "days",
+      "time_to_fix": "2-8 hours",
+      "slugs": [
+        "optimism-deprecation",
+        "out-of-order-retryable"
+      ],
+      "attack_class": "The contract uses deprecated L2 system APIs or assumes cross-chain retryable messages execute in order. Messages may execute out of order or values may be wrong, breaking state assumptions across chains. Preconditions: deployment on the affected L2 and reliance on ordering or the deprecated value.",
+      "remediation": "Migrate to current L2 system contract APIs and design cross-chain handlers to be order-independent and idempotent.",
+      "fix_pattern": "// make each message self-contained and idempotent\nrequire(!processed[msgId]); processed[msgId] = true;",
+      "exposure": {
+        "model": "partial",
+        "factor": 0.01,
+        "low": 0.0,
+        "high": 0.1,
+        "assumption": "Deprecated/ordering issues on L2: small share assumed."
+      }
+    },
+    "token_interface": {
+      "label": "Token interface non-conformance",
+      "exploitability": "hard",
+      "time_to_exploit": "n/a (integration failures)",
+      "time_to_fix": "under 1 hour",
+      "slugs": [
+        "erc20-interface",
+        "erc721-interface"
+      ],
+      "attack_class": "Token functions have signatures or return types that differ from the standard, so integrating contracts may revert or mis-handle results. This is mainly an integration/liveness risk rather than a direct theft vector.",
+      "remediation": "Match the ERC-20/721 interfaces exactly (return bool where required) or inherit a reference implementation.",
+      "fix_pattern": "function transfer(address to, uint256 v) external returns (bool) { _transfer(msg.sender, to, v); return true; }",
+      "exposure": {
+        "model": "partial",
+        "factor": 0.01,
+        "low": 0.0,
+        "high": 0.05,
+        "assumption": "Interface mismatches break integrations; direct loss unlikely."
+      }
+    },
+    "missing_events": {
+      "label": "Missing events",
+      "exploitability": "hard",
+      "time_to_exploit": "n/a (monitoring gap)",
+      "time_to_fix": "under 1 hour",
+      "slugs": [
+        "events-access",
+        "events-maths"
+      ],
+      "attack_class": "Critical parameter or access changes emit no event, so monitoring cannot detect a malicious or mistaken change in time. This does not enable an attack by itself but delays detection and response.",
+      "remediation": "Emit an event for every privileged state change and important arithmetic parameter update.",
+      "fix_pattern": "event FeeUpdated(uint256 oldFee, uint256 newFee);\nfunction setFee(uint256 f) external onlyOwner { emit FeeUpdated(fee, f); fee = f; }",
+      "exposure": {
+        "model": "none",
+        "factor": 0.0,
+        "low": 0.0,
+        "high": 0.0,
+        "assumption": "Missing events are an observability issue; no direct loss."
+      }
+    },
+    "generic": {
+      "label": "Other static-analysis finding",
+      "exploitability": "unknown",
+      "time_to_exploit": "unknown",
+      "time_to_fix": "varies",
+      "slugs": [],
+      "attack_class": "A static-analysis detector without a dedicated playbook entry reported this pattern. Impact depends on context; review the detector documentation and the flagged code path to judge whether value or control is at risk.",
+      "remediation": "Review the flagged location against the detector's documentation, add a test reproducing the concern, and apply the detector's recommended fix.",
+      "fix_pattern": "// see the detector's documentation for the recommended pattern",
+      "exposure": {
+        "model": "partial",
+        "factor": 0.05,
+        "low": 0.0,
+        "high": 0.1,
+        "assumption": "Unclassified finding: small share of holdings assumed at risk."
+      }
+    },
+    "scam_honeypot": {
+      "label": "Scam / honeypot (risk to users)",
+      "exploitability": "unknown",
+      "time_to_exploit": "not applicable (risk to users who interact)",
+      "time_to_fix": "not applicable for users; owners: redesign required",
+      "slugs": [
+        "quiz-honeypot",
+        "payout-lure",
+        "hidden-owner-drain",
+        "transfer-blocking-token",
+        "unlimited-owner-mint",
+        "external-log-gate"
+      ],
+      "attack_class": "The contract is built so that users who interact lose: a quiz/guess pot whose answer or balance the privileged account controls, a payable function that forwards deposits to a privileged address, a hidden owner, a token holders cannot sell, or unlimited privileged minting. This is not a bug an outsider can exploit; the danger is to people who send funds or buy the token; or a bank whose withdraw path is gated by an external Log/TransferLog helper that can trap Collect/CashOut while deposits still succeed.",
+      "remediation": "Users: do not send funds to or buy from this contract. Owners of a legitimate contract with a similar shape: remove privileged control over game outcomes and user deposits, cap minting, and drop per-address transfer blocks or put them behind a transparent, time-locked governance process.",
+      "fix_pattern": "// Fix the answer at deployment and remove privileged withdraw/change paths\nbytes32 public immutable responseHash;\nconstructor(bytes32 h) { responseHash = h; }\n// no admin function may assign responseHash or move address(this).balance",
+      "exposure": {
+        "model": "honeypot",
+        "factor": 1.0,
+        "low": 0.0,
+        "high": 1.0,
+        "assumption": "User funds at risk: the estimate shows the contract's bait balance (what is visibly on offer); actual user losses depend on deposits."
+      }
+    },
+    "known_exploit": {
+      "label": "Known exploit shape",
+      "exploitability": "moderate",
+      "time_to_exploit": "hours to days",
+      "time_to_fix": "2-8 hours",
+      "slugs": [
+        "compound-empty-market",
+        "reward-acc-per-share",
+        "bridge-message-validation"
+      ],
+      "attack_class": "The code matches a shape that has been exploited before: a Compound-v2-style market whose exchange rate can be inflated while empty, a staking pool that changes stakes before updating its reward accumulator, or a cross-chain receiver that acts on unauthenticated messages. Preconditions differ per shape (empty market listed as collateral; rewards accruing; handler callable by anyone).",
+      "remediation": "Seed and burn minimum liquidity at market listing; update pool/user rewards before any stake change; require msg.sender to be the messaging endpoint and the source to be a trusted remote.",
+      "fix_pattern": "require(msg.sender == endpoint && trustedRemote[src] == srcAddress);",
+      "exposure": {
+        "model": "partial",
+        "factor": 0.25,
+        "low": 0.0,
+        "high": 1.0,
+        "assumption": "Historically these shapes drained a market/pool; unverified matches assume a partial share."
+      }
+    }
+  }
+}

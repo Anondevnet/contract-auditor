@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Findings</h2>
+    <p class="subtitle">Every recorded finding across scans. Click a row to investigate.</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3>Search and filter</h3>
+        <div class="header-right">
+            <span class="muted" id="findings-count">Loading...</span>
+        </div>
+    </div>
+    <div class="filter-bar">
+        <input type="search" id="findings-q" class="input-sm" placeholder="Search title, contract, function, tool..." />
+        <select id="findings-severity" class="select-sm">
+            <option value="">All severities</option>
+            <option value="CRITICAL">CRITICAL</option>
+            <option value="HIGH">HIGH</option>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="LOW">LOW</option>
+            <option value="INFORMATIONAL">INFORMATIONAL</option>
+        </select>
+        <select id="findings-status" class="select-sm">
+            <option value="">All statuses</option>
+            <option value="UNVERIFIED">UNVERIFIED</option>
+            <option value="POSSIBLE">POSSIBLE</option>
+            <option value="LIKELY">LIKELY</option>
+            <option value="CONFIRMED">CONFIRMED</option>
+            <option value="DISMISSED">DISMISSED</option>
+            <option value="FALSE_POSITIVE">FALSE_POSITIVE</option>
+        </select>
+        <select id="findings-state" class="select-sm">
+            <option value="">All states</option>
+            <option value="New">New</option>
+            <option value="Needs Review">Needs Review</option>
+            <option value="Potential Vulnerability">Potential Vulnerability</option>
+            <option value="Confirmed by Evidence">Confirmed by Evidence</option>
+            <option value="False Positive">False Positive</option>
+            <option value="Fixed">Fixed</option>
+            <option value="Retested">Retested</option>
+        </select>
+        <select id="findings-finrisk" class="select-sm" title="Second-stage financial-risk review">
+            <option value="">Fin. risk review: all</option>
+            <option value="pending">Fin. risk: pending review</option>
+            <option value="validated_financial_risk">Fin. risk: validated financial risk</option>
+            <option value="potential_financial_risk">Fin. risk: potential financial risk</option>
+            <option value="disproved">Fin. risk: disproved</option>
+            <option value="inconclusive">Fin. risk: inconclusive</option>
+            <option value="not_financially_exploitable">Fin. risk: not financially exploitable</option>
+            <option value="high_impact">Fin. risk: high-impact (validated+potential)</option>
+        </select>
+        <select id="findings-sort" class="select-sm">
+            <option value="severity">Sort: severity</option>
+            <option value="title">Sort: title</option>
+            <option value="timestamp">Sort: newest scan</option>
+            <option value="state">Sort: state</option>
+            <option value="category">Sort: category</option>
+        </select>
+        <select id="findings-group" class="select-sm">
+            <option value="none">No grouping</option>
+            <option value="severity">Group: severity</option>
+            <option value="category">Group: category</option>
+            <option value="state">Group: state</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" id="findings-clear">Clear</button>
+    </div>
+</div>
+
+<div class="card" id="finrisk-counters" style="display:none;">
+    <div class="card-header">
+        <h3>Financial risk review queue</h3>
+        <div class="header-right">
+            <span class="muted" id="finrisk-counters-at">Loading...</span>
+        </div>
+    </div>
+    <div class="card-body" id="finrisk-counters-body"></div>
+</div>
+
+<div id="findings-groups"></div>
+
+<div class="card" id="findings-empty" style="display:none;">
+    <div class="card-body">
+        <p class="muted">No findings match the current filters.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/findings.js"></script>
+{% endblock %}

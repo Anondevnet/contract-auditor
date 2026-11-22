@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AUDITOR_MODE: local
+      AUDITOR_HISTORY_DB: ${{ runner.temp }}/audit_history.db
+      AUDITOR_DISK_PRESSURE_RELAX: "1"
+      AUDITOR_JOBS_CACHE: ${{ runner.temp }}/jobs_cache.json
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+          pip install slither-analyzer==0.11.2 solc-select==1.2.0
+
+      - name: Install solc versions
+        run: |
+          solc-select install 0.4.26 0.5.17 0.6.12 0.7.6 0.8.20 0.8.26
+          solc-select use 0.8.26 --always-install
+
+      - name: Run test suite
+        run: python -m pytest tests/ -q --tb=short

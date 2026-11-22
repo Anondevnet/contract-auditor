@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contract-auditor/schemas/evidence.schema.json",
+  "title": "EvidenceItem",
+  "description": "One observation with full provenance and an explicit epistemic status. 'proves' and 'does_not_prove' are both mandatory in spirit: evidence that is over-read is as dangerous as missing evidence.",
+  "type": "object",
+  "required": [
+    "evidence_id",
+    "source",
+    "artifact_type",
+    "excerpt",
+    "epistemic",
+    "content_hash",
+    "retrieved_at"
+  ],
+  "properties": {
+    "evidence_id": { "type": "string", "pattern": "^EV-[0-9a-f]{12}$" },
+    "source": {
+      "type": "string",
+      "description": "Provenance, e.g. 'forge build', 'slither', 'ollama', 'rpc:getLogs'. Never empty."
+    },
+    "artifact_type": {
+      "type": "string",
+      "description": "e.g. tool_output, source_file, abi, bytecode, transaction, event_log, compiler_metadata, model_response"
+    },
+    "tool": { "type": ["string", "null"] },
+    "location": {
+      "type": ["string", "null"],
+      "description": "Where in the artifact, e.g. 'src/Pool.sol:142-168' or a tx hash with log index."
+    },
+    "contract_address": { "type": ["string", "null"] },
+    "chain": { "type": ["string", "null"] },
+    "epistemic": {
+      "type": "string",
+      "enum": ["FACT", "INFERENCE", "HYPOTHESIS", "UNKNOWN", "AI_OPINION"],
+      "description": "FACT is directly observed. AI_OPINION is never promoted to FACT without independent verification."
+    },
+    "excerpt": { "type": "string", "description": "Verbatim content. Never paraphrased into existence." },
+    "content_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 of the excerpt, so unaltered provenance is checkable."
+    },
+    "retrieved_at": { "type": "string" },
+    "proves": { "type": "array", "items": { "type": "string" } },
+    "does_not_prove": { "type": "array", "items": { "type": "string" } },
+    "has_raw": { "type": "boolean" }
+  }
+}

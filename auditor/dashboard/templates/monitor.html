@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Live Deployment Monitor</h2>
+    <p class="subtitle">
+        New contract deployments scanned by <span class="mono">audit.py monitor</span>. For proactive high-value targets see <a href="/hunt">Hunt</a>.
+        Read-only view, refreshes every 2.5 s. <span id="mon-updated" class="muted"></span>
+    </p>
+</div>
+
+<div class="card"><div class="card-body" id="mon-panel-summary"><span class="muted">AI review panel: loading…</span></div></div>
+<div class="stats-grid mon-stats" id="mon-counters">
+    <div class="stat-card"><div><span class="stat-value" id="c-today">-</span><span class="stat-label">Audited today (<span id="c-tz">America/Detroit</span>)</span></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="c-all">-</span><span class="stat-label">Audited all-time</span></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="c-ftoday">-</span><span class="stat-label">Findings today</span><div class="mon-sev" id="c-fsev"></div></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="c-fall">-</span><span class="stat-label">Findings all-time</span></div></div>
+    <div class="stat-card mon-money"><div><span class="stat-value" id="c-var">-</span><span class="stat-label">Confirmed outsider value at risk today (est.)</span><div class="mon-sev muted" id="c-var-note">rough estimate</div></div></div>
+    <div class="stat-card mon-warn"><div><span class="stat-value" id="c-unverified">-</span><span class="stat-label">Unverified exposure today (unconfirmed privileged-auth)</span><div class="mon-sev muted" id="c-unverified-note">not in headline</div></div></div>
+    <div class="stat-card mon-warn"><div><span class="stat-value" id="c-unresolved">-</span><span class="stat-label">Unresolved suspicion exposure today (est.)</span><div class="mon-sev muted">open findings · not confirmed</div></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="c-disproved">-</span><span class="stat-label">Disproved / FP excluded today (est.)</span><div class="mon-sev muted">suppressed · not in headline</div></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="c-holdings">-</span><span class="stat-label">Contract holdings scanned (all-time, est.)</span><div class="mon-sev muted" id="c-holdings-note">not exploitable exposure</div></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="c-supp">-</span><span class="stat-label">Suppressed today / all-time (library, known-benign)</span></div></div>
+    <div class="stat-card mon-warn"><div><span class="stat-value" id="c-cna">-</span><span class="stat-label">Could not analyze (today / all-time)</span><div class="mon-sev muted" id="c-legacy"></div></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="c-queue">-</span><span class="stat-label">Queue pending / unverified</span></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="c-block">-</span><span class="stat-label">Last block seen</span></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="c-polls">-</span><span class="stat-label">Polls / last hour</span></div></div>
+    <div class="stat-card"><div><span class="stat-value" id="c-avg">-</span><span class="stat-label">Avg scan time</span></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>Now scanning</h3><div class="header-right"><span class="muted">ETA is an estimate (rolling avg s/line × source lines)</span></div></div>
+    <div class="card-body" id="mon-current"><p class="muted">Idle — no contract is being scanned.</p></div>
+</div>
+
+<div class="mon-two">
+    <div class="card">
+        <div class="card-header"><h3>Recent scans</h3>
+            <div class="header-right"><label class="muted" for="mon-sort">Sort</label>
+                <select id="mon-sort" class="select-sm">
+                    <option value="recent">Newest</option>
+                    <option value="loss">Impact estimate (heuristic)</option>
+                    <option value="risk">Severity-weighted risk</option>
+                    <option value="tvl">TVL</option>
+                </select></div></div>
+        <div class="table-container">
+            <table class="data-table">
+                <thead><tr><th>Contract</th><th>Address</th><th>Status</th><th>Findings</th><th title="Contract holdings: ETH + major ERC-20s, USD (rough estimate)">TVL (est.)</th><th title="Heuristic model estimate for potential impact; not proven loss or takeable funds">Impact estimate</th><th>Lines</th><th>Duration</th><th>Finished</th><th></th></tr></thead>
+                <tbody id="mon-scans"><tr class="empty-row"><td colspan="10">No monitor scans yet.</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3>Recent alerts</h3><div class="header-right"><span class="muted" id="mon-alerts-total"></span></div></div>
+        <div class="card-body mon-feed" id="mon-alerts"><p class="muted">No alerts.</p></div>
+    </div>
+</div>
+
+<div class="card" id="mon-detail" style="display:none;">
+    <div class="card-header"><h3 id="mon-detail-title">Scan detail</h3>
+        <div class="header-right"><a class="btn btn-secondary btn-sm" id="mon-source-link" href="#">View source</a></div></div>
+    <div class="card-body">
+        <div class="meta-grid" id="mon-detail-meta"></div>
+        <div id="mon-detail-value"></div>
+        <div class="mon-filter"><label><input type="checkbox" id="mon-show-suppressed"> Show suppressed findings (library code / known-benign)</label>
+            <span class="muted" id="mon-suppressed-count"></span></div>
+        <div id="mon-detail-findings"></div>
+        <div id="mon-source" style="display:none;">
+            <div class="mon-source-bar"><select id="mon-source-file" class="select-sm"></select></div>
+            <pre class="mon-code" id="mon-source-code"></pre>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/monitor.js"></script>
+{% endblock %}

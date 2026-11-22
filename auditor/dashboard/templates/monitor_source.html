@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{{ view.contract_name or "Contract" }} source</h2>
+    <p class="subtitle mono">{{ view.address }} — read-only copy from the local monitor cache</p>
+</div>
+<div class="card">
+    <div class="card-header"><h3>{{ view.file or "no file" }}</h3>
+        <div class="header-right">
+        {% for f in view.files %}<a class="btn btn-link btn-sm" href="?file={{ f|urlencode }}">{{ f }}</a>{% endfor %}
+        </div></div>
+    <div class="card-body">
+        {% if view.content is none %}<p class="muted">{{ view.note }}</p>
+        {% else %}<pre class="mon-code">{{ view.content }}</pre>{% endif %}
+        {% if view.truncated %}<p class="muted">Truncated at 2 MB.</p>{% endif %}
+    </div>
+</div>
+<a class="btn btn-secondary" href="/monitor">Back to monitor</a>
+{% endblock %}
+
+{% block scripts %}<script>setupChrome("monitor");</script>{% endblock %}

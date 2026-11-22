@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contract Auditor — public demo</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #1a222c;
+      --ink: #e8eef4;
+      --muted: #93a0ad;
+      --accent: #7cb4ff;
+      --line: #2a3542;
+      --crit: #f97171;
+      --high: #f5a623;
+      --med: #e6c14a;
+      --low: #7dcea0;
+      --fact: #7dcea0;
+      --inf: #7cb4ff;
+      --hyp: #c9a0ff;
+      --unk: #93a0ad;
+      --ai: #f0a3c2;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background: var(--bg); color: var(--ink); line-height: 1.5;
+    }
+    main { max-width: 860px; margin: 0 auto; padding: 32px 20px 80px; }
+    h1 { font-weight: 600; font-size: 1.6rem; margin: 0 0 8px; }
+    .lede { color: var(--muted); margin: 0 0 24px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    textarea {
+      width: 100%; min-height: 220px; background: #10161c; color: var(--ink);
+      border: 1px solid var(--line); border-radius: 8px; padding: 12px; font-family: ui-monospace, Menlo, monospace;
+      font-size: 13px;
+    }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0; }
+    button, .btn {
+      background: var(--accent); color: #0b1220; border: 0; border-radius: 8px;
+      padding: 8px 14px; font-weight: 600; cursor: pointer;
+    }
+    button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    button:disabled { opacity: 0.5; cursor: wait; }
+    .samples button { font-weight: 500; font-size: 13px; }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+    .sev { margin-top: 18px; }
+    .sev h2 { font-size: 1rem; margin: 0 0 8px; letter-spacing: 0.04em; }
+    .finding { border-top: 1px solid var(--line); padding: 10px 0; }
+    .finding h3 { margin: 0 0 4px; font-size: 0.98rem; }
+    .badge { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 999px; margin-right: 6px; font-weight: 600; }
+    .CRITICAL { color: var(--crit); } .HIGH { color: var(--high); } .MEDIUM { color: var(--med); } .LOW { color: var(--low); }
+    .FACT { background: #1d3a2c; color: var(--fact); }
+    .INFERENCE { background: #16304a; color: var(--inf); }
+    .HYPOTHESIS { background: #2a1f44; color: var(--hyp); }
+    .UNKNOWN { background: #2a3138; color: var(--unk); }
+    .AI_OPINION { background: #3a1c2c; color: var(--ai); }
+    #status { margin-top: 8px; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Contract Auditor</h1>
+  <p class="lede">Paste or upload a single Solidity file. The scan runs locally with Slither and a pragma-picked solc. Nothing is sent to a chain, and local paths, addresses, and live-network tools are disabled in this demo.</p>
+
+  <div class="card">
+    <p class="muted">Try a sample:</p>
+    <div class="row samples" id="samples">
+      {% for s in samples %}
+      <button type="button" class="secondary" data-sample="{{ s.id }}" title="{{ s.blurb }}">{{ s.title }}</button>
+      {% endfor %}
+    </div>
+    <textarea id="source" placeholder="pragma solidity ^0.8.0;&#10;contract Example { ... }" spellcheck="false"></textarea>
+    <div class="row">
+      <input type="file" id="file" accept=".sol,text/plain">
+      <button type="button" id="run">Scan</button>
+      <span class="muted">Max {{ max_bytes }} bytes, .sol only. {{ rate_limit }} scans/hour per IP.</span>
+    </div>
+    <p id="status" class="muted"></p>
+  </div>
+
+  <div id="results"></div>
+
+  <p class="muted">Findings are labeled <span class="badge FACT">FACT</span> <span class="badge INFERENCE">INFERENCE</span> <span class="badge HYPOTHESIS">HYPOTHESIS</span> <span class="badge UNKNOWN">UNKNOWN</span> <span class="badge AI_OPINION">AI_OPINION</span>. A static-analysis hit is not a confirmed exploit. JSON: <code>POST /api/scan</code>. Health: <code>GET /health</code>.</p>
+</main>
+<script>
+const source = document.getElementById("source");
+const status = document.getElementById("status");
+const results = document.getElementById("results");
+const runBtn = document.getElementById("run");
+
+document.getElementById("samples").addEventListener("click", async (ev) => {
+  const btn = ev.target.closest("[data-sample]");
+  if (!btn) return;
+  const res = await fetch("/api/samples/" + btn.dataset.sample);
+  if (!res.ok) { status.textContent = "Could not load sample."; return; }
+  const data = await res.json();
+  source.value = data.source;
+  status.textContent = "Loaded " + data.id;
+});
+
+document.getElementById("file").addEventListener("change", (ev) => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => { source.value = reader.result; };
+  reader.readAsText(f);
+});
+
+function badge(label) {
+  return '<span class="badge ' + label + '">' + label + '</span>';
+}
+
+function render(data) {
+  if (data.error && data.status !== "completed") {
+    results.innerHTML = '<div class="card"><p>' + (data.error || data.status) + '</p><p class="muted">solc ' + (data.solc_version || "n/a") + ', status ' + data.status + '</p></div>';
+    return;
+  }
+  const groups = data.findings_by_severity || {};
+  const order = ["CRITICAL","HIGH","MEDIUM","LOW","INFO","UNKNOWN"];
+  let html = '<div class="card"><p>Status <strong>' + data.status + '</strong> · solc ' + (data.solc_version || "n/a") + ' · ' + (data.n_findings || 0) + ' finding(s) · ' + (data.duration_s || 0) + 's</p>';
+  if (data.error) html += '<p class="muted">' + data.error + '</p>';
+  let any = false;
+  for (const sev of order.concat(Object.keys(groups).filter(k => !order.includes(k)))) {
+    const items = groups[sev] || [];
+    if (!items.length) continue;
+    any = true;
+    html += '<div class="sev"><h2 class="' + sev + '">' + sev + ' (' + items.length + ')</h2>';
+    for (const f of items) {
+      html += '<div class="finding"><h3>' + (f.title || "Finding") + '</h3>';
+      html += '<p class="muted">' + [f.contract, f.function, (f.lines && f.lines.length ? "lines " + f.lines.join(", ") : "")].filter(Boolean).join(" · ") + '</p>';
+      for (const evd of (f.evidence || [])) {
+        html += '<p>' + badge(evd.epistemic || "UNKNOWN") + ' <span class="muted">' + (evd.excerpt || evd.source || "") + '</span></p>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  if (!any) html += '<p class="muted">No findings from this static scan.</p>';
+  html += '</div>';
+  results.innerHTML = html;
+}
+
+runBtn.addEventListener("click", async () => {
+  runBtn.disabled = true;
+  status.textContent = "Scanning…";
+  results.innerHTML = "";
+  try {
+    const res = await fetch("/api/scan", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({source: source.value, filename: "paste.sol"}),
+    });
+    const data = await res.json();
+    if (res.status === 429) {
+      status.textContent = data.error + (data.retry_after_s ? " Retry in " + data.retry_after_s + "s." : "");
+      return;
+    }
+    if (res.status >= 400 && !data.status) {
+      status.textContent = data.error || ("HTTP " + res.status);
+      return;
+    }
+    status.textContent = "Done.";
+    render(data);
+  } catch (err) {
+    status.textContent = "Scan failed: " + err;
+  } finally {
+    runBtn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  P1 step 1 TEMPLATE — NOT installed by the auditor, and NOT loaded by any tool.
+  To use it yourself: replace __PROJECT_DIR__ with the absolute project path,
+  copy to ~/Library/LaunchAgents/, then (manual, user-invoked):
+      launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.contract-auditor.watchdog.plist
+  Stop / remove:
+      launchctl bootout gui/$(id -u)/com.contract-auditor.watchdog
+  Notes: the watchdog restarts the monitor/hunt workers itself (bounded
+  backoff); KeepAlive restarts the watchdog process if it ever crashes.
+  Secrets are NOT in this file: scripts/run_watchdog.sh reads them from the
+  macOS Keychain (services "etherscan-api-key", optional "eth-rpc-url").
+  Worker state / heartbeats live in monitor_state.db; locks are sibling
+  dotfiles (.worker-*-<network>.lock, .watchdog.lock). Only one watchdog may
+  run per state directory (second exits with code 7).
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.contract-auditor.watchdog</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/zsh</string>
+        <string>__PROJECT_DIR__/scripts/run_watchdog.sh</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>__PROJECT_DIR__</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+        <key>Crashed</key>
+        <true/>
+    </dict>
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>StandardOutPath</key>
+    <string>__PROJECT_DIR__/reports/watchdog.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>__PROJECT_DIR__/reports/watchdog.err.log</string>
+</dict>
+</plist>

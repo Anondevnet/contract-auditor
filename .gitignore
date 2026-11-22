@@ -1,0 +1,65 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+
+# Test and tooling artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Evidence, audit runs and reports are per-engagement outputs.
+# They are kept out of version control: sizes are unbounded in principle and
+# some artifacts may carry sensitive findings.
+audits/*
+!audits/.gitkeep
+reports/*
+!reports/.gitkeep
+evidence/*
+!evidence/.gitkeep
+
+# Never commit credentials. The auditor has no API keys by design; a key here
+# means something was added that should not have been.
+.env
+*.key
+*.pem
+secrets.json
+
+# OS noise
+.DS_Store
+# Scan history database (local state, never committed)
+audit_scan_history.db
+audit_scan_history.db-shm
+audit_scan_history.db-wal
+
+# Benchmark store (Phase 14 — separate DB, never the scan history)
+benchmark_store.db
+benchmark_store.db-shm
+benchmark_store.db-wal
+
+# Backup files and the embedded protocol repository (kept on disk, never committed)
+*.bak
+protocol/
+
+# Monitor state (Phase 17, local only)
+monitor_state.db
+monitor_state.db-shm
+monitor_state.db-wal
+
+# Monitor source cache (Phase 18, local only)
+monitor_cache/
+
+# SQLite journals
+audit_scan_history.db-journal
+benchmark_store.db-journal
+monitor_state.db-journal
+corpus/
+
+# Public demo state (rate limits, spend ledger)
+reports/public_demo/
+reports/jobs_cache.json
+
+# Virtualenv
+.venv/
+venv/

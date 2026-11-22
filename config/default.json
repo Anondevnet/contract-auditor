@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "model": {
+    "provider": "ollama",
+    "name": "qwen3-8b-uncensored-16k:latest",
+    "endpoint": "http://localhost:11434",
+    "probe_on_status": true,
+    "timeout_seconds": 3.0,
+    "base_url": null,
+    "max_output_tokens": 1500
+  },
+  "limits": {
+    "max_evidence_mb": 256,
+    "max_source_mb": 256,
+    "max_report_mb": 16,
+    "max_disk_usage_mb": 1024,
+    "max_tool_timeout_seconds": 15,
+    "large_file_threshold_mb": 10
+  },
+  "default_chain": "ethereum",
+  "public": {
+    "max_upload_bytes": 204800,
+    "rate_limit_scans_per_hour": 10,
+    "max_concurrent_scans": 2,
+    "scan_timeout_seconds": 90,
+    "daily_spend_usd": 0.0
+  }
+}

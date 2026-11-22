@@ -1,0 +1,104 @@
+{
+  "benchmark": "contract-auditor-phase15-realworld",
+  "protocol": "PROTOCOL.md",
+  "schema_version": 2,
+  "version": 1,
+  "created": "2026-10-14",
+  "toolchain": {
+    "slither": "0.11.6 (PATH)",
+    "solc": "0.5.8 (global PATH, unchanged); RW-001 evaluates under isolated solc 0.5.10 (Step 9B authorized install; PATH symlink dir prepended for the run process only, solc-select 'use' never run); RW-002 requires a solc v0.3.1-2016-04-12-era compiler (absent from the offline set \u2014 condition 2 still holds); RW-003 evaluates under isolated solc 0.8.36 (homebrew /opt/homebrew/bin/solc, PATH symlink dir prepended for the run process only; solc 0.8.37 artifact also present, satisfies the same pragma ^0.8.0)",
+    "forge": "1.8.3 (not used)"
+  },
+  "provenance_default": "Real-world fixture: third-party source vendored verbatim under benchmarks/realworld/ with independent ground-truth citation in per-fixture provenance and ground_truth_ref. Research record: benchmarks/realworld/RESEARCH.md (Phase 15 Step 3, 2026-10-14). No detector output was consulted when fixing labels.",
+  "fixtures": [
+    {
+      "fixture_id": "RW-001",
+      "file": "RW-001-group-mgmt-txorigin.sol",
+      "category": "access_control",
+      "expected_label": "vulnerable",
+      "expected_contract": "DefaultOnChainPrivacyGroupManagementContract",
+      "expected_function": "lock",
+      "expected_behavior": "Mutating group-management functions (lock/unlock/addParticipants/removeParticipant) authorize with require(tx.origin == _owner, \"Origin not the owner.\") and canUpgrade() returns tx.origin == _owner, so a phishing contract invoked by the owner passes the ownership check \u2014 per Immunefi report #37577 (Vulnerability Description) and the pinned source of PR #1288.",
+      "protection_control": null,
+      "accepted_checks": [
+        "tx-origin"
+      ],
+      "analyzer_family": "access_control",
+      "compiler": "solc 0.5.10 (artifact ~/.solc-select/artifacts/solc-0.5.10/solc-0.5.10, installed 2026-10-14 Step 9B via solc-select; global PATH solc remains 0.5.8 \u2014 the evaluation run prepends an isolated PATH symlink dir so only that process sees 0.5.10). pragma ^0.5.9 admits 0.5.10. Tool-mechanics verified 2026-10-14 by compile-only probe from the fixture directory (exit 0, no diagnostics, bytecode emitted for DefaultOnChainPrivacyGroupManagementContract, sibling relative import of OnChainPrivacyGroupManagementInterface.sol resolved) \u2014 this refutes the PROTOCOL \u00a75 condition-2 premise recorded at acquisition time; evaluable flipped false->true on compile evidence alone, before any detector output of the evaluation run was consulted. Labels, expected_contract, expected_function, and accepted_checks are unchanged since acquisition.",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "provenance": "T1 acquisition 2026-10-14: source retrieved verbatim from pinned commit 78c458b321903815d2cbc085890bb2fe97da629f of hyperledger/besu (repo now besu-eth/besu), file privacy-contracts/src/main/solidity/DefaultOnChainPrivacyGroupManagementContract.sol (import target OnChainPrivacyGroupManagementInterface.sol vendored under its original filename). Label fixed by source semantics (require(tx.origin == _owner) at lines 22/28/38/47) + independent report, never by detector output. License Apache-2.0 (LICENSE.apache-2.0 vendored from the pinned commit). Full research record: benchmarks/realworld/RESEARCH.md \u00a72.",
+      "source_url": "https://raw.githubusercontent.com/hyperledger/besu/78c458b321903815d2cbc085890bb2fe97da629f/privacy-contracts/src/main/solidity/DefaultOnChainPrivacyGroupManagementContract.sol",
+      "local_source_ref": "raw pinned URL above (retrieved 2026-10-14); dependency interface: https://raw.githubusercontent.com/hyperledger/besu/78c458b321903815d2cbc085890bb2fe97da629f/privacy-contracts/src/main/solidity/OnChainPrivacyGroupManagementInterface.sol",
+      "source_sha256": "e9f8cc31df24ba511bce7caeb678902002e09facd38e0b788843bd667ec4e6d0",
+      "license": "Apache-2.0",
+      "ground_truth_tier": "T1",
+      "ground_truth_ref": "https://reports.immunefi.com/ethereum-protocol-or-attackathon/37577-bc-insight-tx.origin-usage-in-group-management-contract-allows-phishing-attack-for-unauthorize (Immunefi report #37577, submitted 2024-12-09, @cheems; body cites https://github.com/hyperledger/besu/pull/1288, merged 2020-08-19; retrieved 2026-10-14)"
+    },
+    {
+      "fixture_id": "RW-002",
+      "file": "RW-002-dao-split-reentrancy.sol",
+      "category": "reentrancy",
+      "expected_label": "vulnerable",
+      "expected_contract": "DAO",
+      "expected_function": "splitDAO",
+      "expected_behavior": "splitDAO transfers ETH via createTokenProxy.value(fundsToBeMoved)(msg.sender) and then withdrawRewardFor(msg.sender) BEFORE zeroing balances[msg.sender] and reducing totalSupply (call-before-effects), so a malicious fallback re-enters splitDAO recursively and drains the contract \u2014 per Sirer's Analysis of the DAO Exploit (2016-06-18) and the Etherscan verified source of the deployed contract.",
+      "protection_control": null,
+      "accepted_checks": [
+        "reentrancy-eth",
+        "reentrancy-no-eth",
+        "reentrancy-balance",
+        "reentrancy-events",
+        "reentrancy-benign",
+        "reentrancy-unlimited-gas"
+      ],
+      "analyzer_family": "reentrancy",
+      "compiler": "deployed with solc v0.3.1-2016-04-12-3ad5e82 (Etherscan); no pragma in source; local solc 0.5.8 cannot compile this era",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": false,
+      "na_reason": "Not evaluable on the fixed local toolchain (realworld README \u00a74d/\u00a76): the vendored bytes are the Etherscan verified source of the deployed contract, which was compiled with solc v0.3.1-2016-04-12-3ad5e82; that era compiler is not present locally and installing/switching compilers is out of scope. Additionally the deployment is multi-file (Etherscan lists 4 source files; only the flattened main file 'DAO' is vendored; TokenCreation/ManagedAccount companions not retrieved). Excluded for toolchain-operability reasons only, never because a detector failed (PROTOCOL \u00a75). Detector channel (reentrancy-*) exists per PROTOCOL \u00a72; no scan has been run and no detector result is claimed.",
+      "provenance": "T2 acquisition 2026-10-14: source bytes extracted from the Etherscan verified-source page for deployed contract 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413 (file 'DAO', 1236 lines; extraction checked for HTML-entity leftovers \u2014 none). The splitDAO function region is byte-identical (14948 chars) to TheDAO/DAO-1.0 @ ceb4e8c66857485dbbb130bbcf190c95f3bbd666 (cross-reference; overall file layout differs due to Etherscan flattening). Label fixed by source semantics + independent exploit analysis, never by detector output. In-file LGPL v3-or-later header; official repo LICENSE vendored as LICENSE.LGPL-3.0-dao. Full research record: benchmarks/realworld/RESEARCH.md \u00a73.",
+      "source_url": "https://etherscan.io/address/0xbb9bc244d798123fde783fcc1c72d3bb8c189413#code",
+      "local_source_ref": "Etherscan address page above (file 1 of 4, retrieved 2026-10-14 via inline verified-source extraction); cross-reference: https://raw.githubusercontent.com/TheDAO/DAO-1.0/ceb4e8c66857485dbbb130bbcf190c95f3bbd666/DAO.sol",
+      "source_sha256": "40163dd800c3b5cc85229693687d74bcbce24bdb6161cdf9eb37ef43f3308cba",
+      "license": "LGPL-3.0-or-later",
+      "ground_truth_tier": "T2",
+      "ground_truth_ref": "https://hackingdistributed.com/2016/06/18/analysis-of-the-dao-exploit/ (Sirer, 2016-06-18; split-order/re-entrancy root-cause analysis; retrieved via search index 2026-10-14 \u2014 direct HTTP blocked from this environment; corroborated by multiple secondary citations and by the Etherscan verified source semantics)"
+    },
+    {
+      "fixture_id": "RW-003",
+      "file": "RW-003-jay-reentrancy.sol",
+      "category": "reentrancy",
+      "expected_label": "vulnerable",
+      "expected_contract": "JAY",
+      "expected_function": "buyJay",
+      "expected_behavior": "buyJay (vendored L1111-L1150) reaches buyJayWithERC721 (L1152), whose loop body performs IERC721(_tokenAddress[id]).transferFrom on an attacker-supplied token address (L1157) BEFORE the state effects _mint (L1142) and nftsSold (L1147) and before the price-dependent emit Price (L1149). A malicious ERC-721 reenters sell (L1185) mid-buyJay and trades at JAYtoETH (L1227-L1229) = value*address(this).balance/totalSupply, which already reflects the caller's msg.value, so JAY is sold at an inflated price. This is the reported Jaypeggers exploit of 2022-12-29 (15.32 ETH): Hypernative (2023-01-10) and SolidityScan (2023) both independently name buyJay, the transferFrom on the attacker's fake ERC-721, and reentry via sell. The contract has no reentrancy guard, so Function.is_reentrant is true.",
+      "protection_control": null,
+      "accepted_checks": [
+        "reentrancy-eth",
+        "reentrancy-no-eth",
+        "reentrancy-balance",
+        "reentrancy-events",
+        "reentrancy-benign",
+        "reentrancy-unlimited-gas"
+      ],
+      "analyzer_family": "reentrancy",
+      "compiler": "pragma solidity ^0.8.0 (all 11 pragmas in the flattened file) admits solc 0.8.36 (homebrew /opt/homebrew/bin/solc) and solc 0.8.37 (~/.solc-select/artifacts/solc-0.8.37). Tool-mechanics verified 2026-10-14 by compile-only probe run BEFORE any scan: /opt/homebrew/bin/solc --bin --abi JAY.sol -o out --overwrite exited 0 with warnings only (unused parameters) and non-empty bytecode emitted for JAY, ERC20 and SafeMath - this refutes the PROTOCOL \u00a75 condition-2 premise, so evaluable is true on compile evidence alone, decided before any detector output was consulted. The evaluation run prepends an isolated PATH dir that points solc at 0.8.36 so only that process sees it; global PATH solc remains 0.5.8 and solc-select 'use' is never run. Labels are unchanged since acquisition.",
+      "requires_tools": [
+        "slither"
+      ],
+      "evaluable": true,
+      "provenance": "T2 acquisition 2026-10-14: source bytes retrieved from the Sourcify v2 API full match for deployed contract 0xf2919D1D80Aff2940274014bef534f7791906FF2 (chainId 1; match=match, creationMatch=match, runtimeMatch=match, verifiedAt 2024-08-08), single source unit JAY.sol, 42166 bytes, byte-compared equal to the vendored file before vendoring; cross-checked against the Etherscan 'Exact Match' verified-source page for the same address. Label fixed by source semantics (untrusted IERC721.transferFrom at L1157 reached from buyJay L1120, preceding _mint L1142 / nftsSold L1147 and the JAYtoETH price read) corroborated by two independent post-mortems, never by detector output. License MIT: SPDX-License-Identifier: MIT at L978; bundled OpenZeppelin Contracts v4.7.0 and Chainlink AggregatorV3Interface (@chainlink/contracts v0.4.1) are also MIT; LICENSE.MIT vendored verbatim from the OpenZeppelin v4.7.0 tag. Full research record and pre-scan ground-truth firewall: benchmarks/realworld/RESEARCH.md \u00a713 (detector-channel prediction recorded pre-scan in \u00a713.5).",
+      "source_url": "https://etherscan.io/address/0xf2919d1d80aff2940274014bef534f7791906ff2#code",
+      "local_source_ref": "https://sourcify.dev/server/v2/contract/1/0xf2919D1D80Aff2940274014bef534f7791906FF2?fields=sources (Sourcify full match, source unit JAY.sol, retrieved 2026-10-14); cross-reference: Etherscan address page above ('Exact Match', retrieved 2026-10-14)",
+      "source_sha256": "96333c9e01d7d548fc34a6343c4f68402a6bbff0f01f57a6a091fe04ed0f8c91",
+      "license": "MIT",
+      "ground_truth_tier": "T2",
+      "ground_truth_ref": "Hypernative, 'Jaypeggers Exploit', 2023-01-10, https://www.hypernative.io/insights/blog/jaypeggers-exploit (retrieved 2026-10-14, HTTP 200): reentrancy on 2022-12-29, 15.32 ETH; names the buyJay call, the attacker-supplied fake ERC-721, IERC721.transferFrom as the reentry point, and reentry via sell at a miscalculated price. Corroborated by SolidityScan/CredShields, 'JAY Token Exploit \u2014 Reentrancy Attack', https://blog.solidityscan.com/jay-token-exploit-reentrancy-attack-d7a4923b6333/ (retrieved 2026-10-14, HTTP 200): names official contract 0xf2919d1, buyJay(), the price = Ether balance / totalSupply formula, reentry via sell, and recommends a reentrancy guard."
+    }
+  ]
+}
