@@ -9,6 +9,7 @@ documenting its absence.
 from __future__ import annotations
 
 import argparse
+import os
 import json
 import logging
 import platform
@@ -600,8 +601,8 @@ def build_parser() -> argparse.ArgumentParser:
     dashboard.add_argument(
         "--port",
         type=int,
-        default=8080,
-        help="port to listen on (default 8080)",
+        default=None,
+        help="port to listen on (default: $PORT or 8080)",
     )
     dashboard.add_argument(
         "--reload",
@@ -1708,6 +1709,20 @@ def _fmt_usd_num(v) -> str:
         return "-"
 
 
+
+def resolve_dashboard_port(cli_port=None, environ=None) -> int | None:
+    """Prefer an explicit --port, else $PORT, else 8080. None if out of range."""
+    env = os.environ if environ is None else environ
+    raw = cli_port if cli_port is not None else env.get("PORT") or 8080
+    try:
+        port = int(raw)
+    except (TypeError, ValueError):
+        return None
+    if not (1 <= port <= 65535):
+        return None
+    return port
+
+
 def _cmd_dashboard(args: argparse.Namespace, settings: Settings) -> int:
     """Serve the dashboard. Loopback only in local mode; 0.0.0.0 allowed in public mode."""
     from auditor.mode import is_public, public_limits
@@ -1725,14 +1740,15 @@ def _cmd_dashboard(args: argparse.Namespace, settings: Settings) -> int:
             file=sys.stderr,
         )
         return EXIT_ERROR
-    if not (1 <= args.port <= 65535):
-        print(f"error: port {args.port} out of range (1-65535)", file=sys.stderr)
+    port = resolve_dashboard_port(args.port)
+    if port is None:
+        print("error: port must be an integer in 1-65535 (check --port or $PORT)", file=sys.stderr)
         return EXIT_ERROR
 
     from .dashboard.app import run_dashboard
 
-    print(f"dashboard: http://{host}:{args.port} (Ctrl-C to stop)")
-    run_dashboard(host=host, port=args.port, reload=args.reload)
+    print(f"dashboard: http://{host}:{port} (Ctrl-C to stop)")
+    run_dashboard(host=host, port=port, reload=args.reload)
     return EXIT_OK
 
 

@@ -1,0 +1,24 @@
+# Blueprint for a Render web service. This repo does not create a Render
+# account or deploy anything; fill in the service in the Render dashboard
+# if you want a $0 free-tier host. The process listens on $PORT.
+services:
+  - type: web
+    name: contract-auditor
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: AUDITOR_MODE
+        value: public
+      - key: AUDITOR_LLM_PROVIDER
+        value: none
+      - key: AUDITOR_DAILY_SPEND_USD
+        value: "0"
+      - key: AUDITOR_MAX_CONCURRENT_SCANS
+        value: "1"
+      - key: AUDITOR_RATE_LIMIT_PER_HOUR
+        value: "10"
+      - key: AUDITOR_SCAN_TIMEOUT_SECONDS
+        value: "90"
+      - key: AUDITOR_TRUST_X_FORWARDED_FOR
+        value: "1"

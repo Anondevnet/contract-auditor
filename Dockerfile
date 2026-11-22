@@ -23,10 +23,12 @@ RUN pip install --user --no-cache-dir -r requirements.txt \
     && solc-select use 0.8.26 --always-install
 
 COPY --chown=auditor:auditor . /app
+COPY --chown=auditor:auditor --chmod=755 docker-entrypoint.sh /app/docker-entrypoint.sh
 
 EXPOSE 8080
 
+# Healthcheck uses 8080, the image default. Render sets PORT; the entrypoint honors it.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD curl -fsS http://127.0.0.1:8080/health || exit 1
+    CMD curl -fsS http://127.0.0.1:${PORT:-8080}/health || exit 1
 
-CMD ["python3", "audit.py", "dashboard", "--host", "0.0.0.0", "--port", "8080"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
