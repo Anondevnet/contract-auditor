@@ -2,17 +2,13 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      AUDITOR_MODE: local
-      AUDITOR_HISTORY_DB: "${{ runner.temp }}/audit_history.db"
-      AUDITOR_DISK_PRESSURE_RELAX: "1"
-      AUDITOR_JOBS_CACHE: "${{ runner.temp }}/jobs_cache.json"
     steps:
       - uses: actions/checkout@v4
 
@@ -34,4 +30,9 @@ jobs:
           solc-select use 0.8.26 --always-install
 
       - name: Run test suite
+        env:
+          AUDITOR_MODE: local
+          AUDITOR_HISTORY_DB: /tmp/audit_history.db
+          AUDITOR_DISK_PRESSURE_RELAX: "1"
+          AUDITOR_JOBS_CACHE: /tmp/jobs_cache.json
         run: python -m pytest tests/ -q --tb=short
