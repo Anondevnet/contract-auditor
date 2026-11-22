@@ -6,7 +6,9 @@ A **local-first Solidity static analyzer**. It runs Slither with a pragma-picked
 
 This is a defensive auditing tool. It does not send transactions, it does not touch funds, and in public demo mode it never reads a local filesystem path, a chain address, Keychain secrets, or live-network hunt/monitor surfaces.
 
-There is no hosted URL. Run it locally (or in Docker) with the commands below.
+**Live demo:** [https://contract-auditor-cgw5.onrender.com](https://contract-auditor-cgw5.onrender.com)
+
+It runs on Render's free tier, so it sleeps after a period of inactivity and takes about a minute to wake. You can also run it locally (or in Docker) with the commands below.
 
 ![Pasting a reentrancy sample and reading labeled findings](docs/demo.gif)
 
