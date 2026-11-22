@@ -1,6 +1,6 @@
 # Contract Auditor
 
-[![CI](https://github.com/Anondevnet/contract-auditor-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/Anondevnet/contract-auditor-demo/actions/workflows/ci.yml)
+[![CI](https://github.com/Anondevnet/contract-auditor/actions/workflows/ci.yml/badge.svg)](https://github.com/Anondevnet/contract-auditor/actions/workflows/ci.yml)
 
 ![Demo](docs/demo.gif)
 
