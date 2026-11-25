@@ -1,18 +1,36 @@
 # Contract Auditor
 
 [![CI](https://github.com/Anondevnet/contract-auditor/actions/workflows/ci.yml/badge.svg)](https://github.com/Anondevnet/contract-auditor/actions/workflows/ci.yml)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue)](.github/workflows/ci.yml)
+[![Live demo](https://img.shields.io/badge/Live%20demo-onrender-2ea44f)](https://contract-auditor-cgw5.onrender.com/)
 
-A **local-first Solidity static analyzer**. It runs Slither with a pragma-picked `solc`, groups findings by severity, and labels every claim so a tool hit is never confused with a model opinion. A public demo mode exposes a small paste-or-upload page; the full CLI and loopback dashboard stay on localhost.
+Paste a Solidity contract and get Slither findings grouped by severity, with every claim labeled `FACT`, `INFERENCE`, `HYPOTHESIS`, `UNKNOWN`, or `AI_OPINION`, so a tool hit is never confused with a model's guess.
 
-This is a defensive auditing tool. It does not send transactions, it does not touch funds, and in public demo mode it never reads a local filesystem path, a chain address, Keychain secrets, or live-network hunt/monitor surfaces.
-
-**Live demo:** [https://contract-auditor-cgw5.onrender.com](https://contract-auditor-cgw5.onrender.com)
-
-It runs on Render's free tier, so it sleeps after a period of inactivity and takes about a minute to wake. You can also run it locally (or in Docker) with the commands below.
+**Live demo:** [https://contract-auditor-cgw5.onrender.com](https://contract-auditor-cgw5.onrender.com) (Render free tier, takes about a minute to wake)
 
 ![Pasting a reentrancy sample and reading labeled findings](docs/demo.gif)
 
 *Local Docker run: load the reentrancy sample, scan, and read HIGH findings tagged `FACT`.*
+
+## Quickstart
+
+Needs Python 3.11; Slither and `solc` come from pip via `solc-select` (the same pins CI uses). No API keys.
+
+```bash
+git clone https://github.com/Anondevnet/contract-auditor && cd contract-auditor
+python3.11 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt pytest slither-analyzer==0.11.2 solc-select==1.2.0
+solc-select install 0.8.26 && solc-select use 0.8.26
+python3 audit.py scan samples/reentrancy.sol    # or: python3 audit.py dashboard
+```
+
+Docker, public demo mode, and the full test setup are in [Quick start](#quick-start) and [Tests and CI](#tests-and-ci).
+
+## Overview
+
+A **local-first Solidity static analyzer**. It runs Slither with a pragma-picked `solc`, groups findings by severity, and labels every claim so a tool hit is never confused with a model opinion. A public demo mode exposes a small paste-or-upload page; the full CLI and loopback dashboard stay on localhost.
+
+This is a defensive auditing tool. It does not send transactions, it does not touch funds, and in public demo mode it never reads a local filesystem path, a chain address, Keychain secrets, or live-network hunt/monitor surfaces.
 
 ## Note on scope
 
