@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/Anondevnet/contract-auditor/actions/workflows/ci.yml/badge.svg)](https://github.com/Anondevnet/contract-auditor/actions/workflows/ci.yml)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue)](.github/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Live demo](https://img.shields.io/badge/Live%20demo-onrender-2ea44f)](https://contract-auditor-cgw5.onrender.com/)
 
 Paste a Solidity contract and get Slither findings grouped by severity, with every claim labeled `FACT`, `INFERENCE`, `HYPOTHESIS`, `UNKNOWN`, or `AI_OPINION`, so a tool hit is never confused with a model's guess.
@@ -160,7 +161,7 @@ GitHub Actions runs the full suite on push and pull request (Python 3.11, Slithe
 
 ## Evaluation
 
-A companion harness scores the auditor (and an optional Slither + LLM triage) against labeled Solidity datasets. Baseline numbers and the scoring code live in the private repo [Anondevnet/auditor-evals](https://github.com/Anondevnet/auditor-evals) (available on request). The public demo does not run that harness.
+A companion harness scores the auditor (and an optional Slither + LLM triage) against labeled Solidity datasets. Baseline numbers and the scoring code are public in [Anondevnet/auditor-evals](https://github.com/Anondevnet/auditor-evals). The public demo does not run that harness.
 
 ## Honest limitations
 
@@ -171,4 +172,4 @@ A companion harness scores the auditor (and an optional Slither + LLM triage) ag
 
 ## License
 
-No open-source license has been chosen yet; all rights reserved until then.
+MIT. See [LICENSE](LICENSE).
